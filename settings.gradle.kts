@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
-        maven { url=uri("https://maven.aliyun.com/repository/google") }
-        maven { url=uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -19,8 +19,8 @@ plugins {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        maven { url=uri("https://maven.aliyun.com/repository/google") }
-        maven { url=uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
         google()
         mavenCentral()
     }
@@ -30,3 +30,8 @@ rootProject.name = "QRMoney"
 include(":app")
 include(":Feature_Home")
 include(":Feature_My")
+include(":Module_UI")
+include(":Feature_Calendart")
+include(":Feature_Asset")
+include(":Feature_Statistic")
+include(":Module_Data")

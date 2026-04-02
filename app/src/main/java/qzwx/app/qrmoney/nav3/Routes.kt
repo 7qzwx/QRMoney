@@ -5,8 +5,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import qzwx.app.feature_asset.nav3.AssetRoute
+import qzwx.app.feature_calendart.nav3.CalendarRoute
 import qzwx.app.feature_home.nav3.HomeRoute
 import qzwx.app.feature_my.nav3.MyRoute
+import qzwx.app.feature_statistic.nav3.StatisticRoute
 
 
 sealed class BottomBarRoute(val route: NavKey, val Icon: ImageVector, val label: String) {
@@ -38,21 +41,7 @@ sealed class BottomBarRoute(val route: NavKey, val Icon: ImageVector, val label:
 
 
 
-sealed class CalendarRoute : NavKey {
-    @Serializable
-    data object Calendar : CalendarRoute()
-}
 
 
-sealed class StatisticRoute : NavKey {
-    @Serializable
-    data object Statictic : StatisticRoute()
-}
-
-
-sealed class AssetRoute : NavKey {
-    @Serializable
-    data object Asset : AssetRoute()
-}
 
 

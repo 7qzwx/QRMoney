@@ -9,8 +9,13 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/Feature_Asset" />
+            <option value="$PROJECT_DIR$/Feature_Calendart" />
             <option value="$PROJECT_DIR$/Feature_Home" />
             <option value="$PROJECT_DIR$/Feature_My" />
+            <option value="$PROJECT_DIR$/Feature_Statistic" />
+            <option value="$PROJECT_DIR$/Module_Data" />
+            <option value="$PROJECT_DIR$/Module_UI" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
