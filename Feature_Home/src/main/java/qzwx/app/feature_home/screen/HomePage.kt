@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.hilt.navigation.compose.hiltViewModel
 import qzwx.app.feature_home.viewmodel.HomePage_VM
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
@@ -22,7 +23,7 @@ import qzwx.app.module_data.entity.QBillEntity
 
 @Composable
 fun HomePage(
-    viewModel: HomePage_VM
+    viewModel: HomePage_VM = hiltViewModel()
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),

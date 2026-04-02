@@ -1,35 +1,27 @@
 package qzwx.app.feature_home.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import qzwx.app.module_data.dao.QBillDao
+import qzwx.app.feature_home.repository.HomePage_RT
 import qzwx.app.module_data.entity.QBillEntity
+import javax.inject.Inject
 
-class HomePage_VM(private val qdao: QBillDao) : ViewModel() {
-    fun getAllBills() = qdao.getAllBills()
-    fun insertBill(bill: QBillEntity) {
+@HiltViewModel
+class HomePage_VM @Inject constructor(private val qrepository: HomePage_RT) : ViewModel() {
+    fun getAllBills() = qrepository.allBills
+    fun insertBill(bill: QBillEntity) =
         viewModelScope.launch {
-            qdao.insertBill(bill)
-        }
-    }
+            qrepository.insertBill(bill)
 
+        }
 
     fun deleteBill(bill: QBillEntity) {
         viewModelScope.launch {
-            qdao.deleteBill(bill)
+            qrepository.deleteBill(bill)
         }
     }
 }
 
 
-class HomePage_VMFactory(private val qdao: QBillDao) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HomePage_VM::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HomePage_VM(qdao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
