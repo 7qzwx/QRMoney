@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+
 }
 
 android {
@@ -52,6 +53,6 @@ dependencies {
     //设置系统状态栏
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
     //Icons图标
-    implementation("androidx.compose.material:material-icons-core:1.7.8")
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    api("androidx.compose.material:material-icons-core:1.7.8")
+    api("androidx.compose.material:material-icons-extended:1.7.8")
 }
