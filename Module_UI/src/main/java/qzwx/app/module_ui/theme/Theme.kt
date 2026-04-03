@@ -254,7 +254,7 @@ val unspecified_scheme = ColorFamily(
 fun QAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // 【重点修改】将其改为 false，以防止 Android 12+ 默认使用系统壁纸动态取色
     content: @Composable() () -> Unit
 ) {
     val colorScheme = when {
@@ -269,11 +269,7 @@ fun QAppTheme(
 
     // 设置系统 状态栏颜色跟背景一致
     val systemUiController = rememberSystemUiController()
-    val syscolor = if (isSystemInDarkTheme()) {
-        darkScheme.background  //暗色模式的背景色
-    } else {
-        lightScheme.background    //亮色模式的背景色
-    }
+    val syscolor = colorScheme.background // 【重点修改】直接从计算好的 colorScheme 中直接取背景色，而不是写死
     val darkiconscolor = if (isSystemInDarkTheme()) {
         false
     } else true
@@ -283,8 +279,6 @@ fun QAppTheme(
             darkIcons = darkiconscolor, // 根据主题设置图标颜色
         )
     }
-
-
 
     MaterialTheme(
         colorScheme = colorScheme,

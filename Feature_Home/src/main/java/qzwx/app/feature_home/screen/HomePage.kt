@@ -9,10 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
-import qzwx.app.feature_home.components.AddNewBill
-import qzwx.app.feature_home.components.Home_SnakBar
+import qzwx.app.feature_home.components.*
 import qzwx.app.feature_home.viewmodel.HomePage_VM
+import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +26,8 @@ fun HomePage(
 
     // Draft state for undo functionality
     var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
+
+    val allBills by viewModel.getAllBills().collectAsState(initial = emptyList())
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -58,15 +63,18 @@ fun HomePage(
     }
 
     Scaffold(
+        topBar = { Home_TopBar() },
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
+        containerColor = MaterialTheme.colorScheme.background, // 在 Scaffold 级别设置整体背景色,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(
+                    top = innerPadding.calculateTopPadding()
+                )
         ) {
 
             item {
@@ -74,6 +82,46 @@ fun HomePage(
                     showBottomSheet = true
                 }) {
                     Text(text = "新增账单")
+                }
+            }
+            item {
+                Home_TotalCard()
+            }
+
+            // Group and sorted bills
+            val billsByDate = allBills.groupBy {
+                LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(it.createdAt),
+                    ZoneId.systemDefault()
+                )
+                    .toLocalDate()
+            }.toSortedMap(compareByDescending { it })
+
+            billsByDate.forEach { (date, dailyBills) ->
+                item {
+                    val dateStr = "${date.monthValue}月${date.dayOfMonth}日"
+                    val dayOfWeekStr = when (date.dayOfWeek.value) {
+                        1 -> "星期一"
+                        2 -> "星期二"
+                        3 -> "星期三"
+                        4 -> "星期四"
+                        5 -> "星期五"
+                        6 -> "星期六"
+                        else -> "星期日"
+                    }
+
+                    val expenseTotal =
+                        dailyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                    val incomeTotal =
+                        dailyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+
+                    Home_BillDayGroup(
+                        dateStr = dateStr,
+                        dayOfWeekStr = dayOfWeekStr,
+                        expenseTotal = expenseTotal,
+                        incomeTotal = incomeTotal,
+                        bills = dailyBills
+                    )
                 }
             }
         }

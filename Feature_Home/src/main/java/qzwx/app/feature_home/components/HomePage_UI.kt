@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -375,6 +376,7 @@ fun AddNewBill(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
@@ -558,6 +560,371 @@ fun Home_SnakBar(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun Home_TotalCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            // Top Sections
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Left: Total Expend
+                Column {
+                    Text(
+                        text = "TOTAL EXPEND",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "¥ 84,250",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = ".00",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                }
+
+                // Right: Percentage and Date
+                Column(horizontalAlignment = Alignment.End) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.TrendingUp,
+                                contentDescription = "Trending Up",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "+12%",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Date Selector Button
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { /* TODO: Open Date Selector */ }
+                            .padding(horizontal = 4.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "2025年4月",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Select Date",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(36.dp))
+
+            // Bottom Sections (Income & Expense)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Income
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "INCOME",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "¥ 12,400",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Divider
+                Box(
+                    modifier = Modifier
+                        .height(30.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
+                )
+
+                // Expense
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 24.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.error, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "EXPENSE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "¥ 4,120",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Home_TopBar() {
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+        ),
+        modifier = Modifier
+            .fillMaxWidth(),
+        title = {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = "QRMoney",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        },
+        actions = {
+            IconButton(onClick = { /* TODO: Open Search */ }) {
+                Icon(
+                    modifier = Modifier.padding(end = 16.dp),
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun Home_BillItem(bill: QBillEntity) {
+    val categoryInfo =
+        billCategoryList.find { it.name == bill.category } ?: billCategoryList.first()
+    val isExpense = bill.type == BillType.EXPENSE
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Icon (removed circular background to match the new image)
+        Icon(
+            imageVector = categoryInfo.icon,
+            contentDescription = bill.category,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(32.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // Category and Remark
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = bill.category,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!bill.remark.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = bill.remark!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Amount
+        val amountStr = if (isExpense) "-${String.format("%.2f", bill.amount)}" else "+${
+            String.format(
+                "%.2f",
+                bill.amount
+            )
+        }"
+        val amountColor =
+            if (isExpense) MaterialTheme.colorScheme.error else Color(0xFF4CAF50)
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = amountStr,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = amountColor
+            )
+//            Spacer(modifier = Modifier.height(4.dp))
+//            Surface(
+//                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+//                shape = RoundedCornerShape(4.dp)
+//            ) {
+//                Text(
+//                    text = "现金",
+//                    style = MaterialTheme.typography.labelSmall,
+//                    color = MaterialTheme.colorScheme.primary,
+//                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                )
+//            }
+        }
+    }
+}
+
+@Composable
+fun Home_BillDayGroup(
+    dateStr: String,
+    dayOfWeekStr: String,
+    expenseTotal: Double,
+    incomeTotal: Double,
+    bills: List<QBillEntity>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+
+    ) {
+        // Header Row (Now external to the white list card to strictly follow reference)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left: Date and Day of Week
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = dateStr,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dayOfWeekStr,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            // Right: Expense & Income totals
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (expenseTotal > 0) {
+                    Text(
+                        text = "支出: ${String.format("%.2f", expenseTotal)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error // Red text
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                if (incomeTotal > 0) {
+                    Text(
+                        text = "收入: ${String.format("%.2f", incomeTotal)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4CAF50) // Green text
+                    )
+                }
+            }
+        }
+
+        // Bill Items wrapped in Surface container independently from Header (Material3 surface)
+        Surface(
+//            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .fillMaxWidth()
+            ) {
+                bills.forEachIndexed { index, bill ->
+                    Home_BillItem(bill = bill)
+                    // 在元素之间添加了清晰的水平分隔线
+                    if (index < bills.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            thickness = 0.5.dp,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
         }
