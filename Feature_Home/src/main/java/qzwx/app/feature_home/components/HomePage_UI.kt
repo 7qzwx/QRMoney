@@ -15,6 +15,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -39,6 +44,8 @@ import com.maxkeppeler.sheets.clock.ClockDialog
 import com.maxkeppeler.sheets.clock.models.ClockConfig
 import com.maxkeppeler.sheets.clock.models.ClockSelection
 import kotlinx.coroutines.launch
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
 import qzwx.app.feature_home.billCategoryList
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
@@ -538,18 +545,22 @@ fun Home_SnakBar(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 )
 
-                // Re-Edit Button
-                IconButton(
-                    onClick = { data.performAction() },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "重新编辑",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                // Action Button
+                if (data.visuals.actionLabel != null) {
+                    val isUndo = data.visuals.actionLabel == "撤销"
+                    IconButton(
+                        onClick = { data.performAction() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isUndo) Icons.AutoMirrored.Filled.Undo else Icons.Default.Edit,
+                            contentDescription = data.visuals.actionLabel,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
+
                 IconButton(
                     onClick = { data.dismiss() },
                     modifier = Modifier.size(36.dp)
@@ -566,9 +577,118 @@ fun Home_SnakBar(
     }
 }
 
-
 @Composable
-fun Home_TotalCard() {
+fun MonthYearPickerDialog(
+    visible: Boolean,
+    currentMonth: LocalDate,
+    onConfirm: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (visible) {
+        var selectedYear by remember { mutableIntStateOf(currentMonth.year) }
+        var selectedMonth by remember { mutableIntStateOf(currentMonth.monthValue) }
+
+        androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Year selector
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = { selectedYear-- }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = "Previous Year"
+                            )
+                        }
+                        Text(
+                            text = "${selectedYear}年",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        IconButton(onClick = { selectedYear++ }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Next Year"
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Month grid
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 200.dp)
+                    ) {
+                        items((1..12).toList()) { month ->
+                            val isSelected = month == selectedMonth
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else Color.Transparent
+                                    )
+                                    .clickable { selectedMonth = month }
+                                    .padding(vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = "${month}月",
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextButton(onClick = onDismiss) {
+                            Text("取消")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            onConfirm(LocalDate.of(selectedYear, selectedMonth, 1))
+                        }) {
+                            Text("确认")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Home_TotalCard(
+    currentYearMonth: String,
+    totalExpense: Double,
+    totalIncome: Double,
+    netBalance: Double,
+    trendPercent: String = "+0%",
+    currentDate: LocalDate = LocalDate.now(),
+    onMonthSelected: (LocalDate) -> Unit = {}
+) {
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -600,16 +720,28 @@ fun Home_TotalCard() {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
+                        val isPositiveNet = netBalance > 0 // Total expense > total income
+                        val symbol = if (isPositiveNet) "-" else if (netBalance < 0) "+" else ""
+                        val color =
+                            if (isPositiveNet) MaterialTheme.colorScheme.error else Color(0xFF4CAF50)
+
+                        val netStr = String.format(
+                            java.util.Locale.getDefault(),
+                            "%.2f",
+                            Math.abs(netBalance)
+                        )
+                        val parts = netStr.split(".")
                         Text(
-                            text = "¥ 84,250",
+                            text = "¥ ${symbol}${parts[0]}",
                             style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.ExtraBold,
+                            color = color
                         )
                         Text(
-                            text = ".00",
+                            text = ".${if (parts.size > 1) parts[1] else "00"}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                            color = color.copy(alpha = 0.7f),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                     }
@@ -626,14 +758,14 @@ fun Home_TotalCard() {
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.TrendingUp,
-                                contentDescription = "Trending Up",
+                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                contentDescription = "涨幅",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "+12%",
+                                text = trendPercent,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -644,25 +776,45 @@ fun Home_TotalCard() {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Date Selector Button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { /* TODO: Open Date Selector */ }
-                            .padding(horizontal = 4.dp, vertical = 4.dp)
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(
-                            text = "2025年4月",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        var showMonthPicker by remember { mutableStateOf(false) }
+
+                        MonthYearPickerDialog(
+                            visible = showMonthPicker,
+                            currentMonth = currentDate,
+                            onConfirm = { newDate ->
+                                showMonthPicker = false
+                                onMonthSelected(newDate)
+                            },
+                            onDismiss = { showMonthPicker = false }
                         )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Select Date",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    showMonthPicker = true
+                                }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = currentYearMonth,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Select Date",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -680,7 +832,7 @@ fun Home_TotalCard() {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                .background(Color(0xFF4CAF50), CircleShape)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
@@ -692,9 +844,16 @@ fun Home_TotalCard() {
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "¥ 12,400",
+                        text = "+${
+                            String.format(
+                                java.util.Locale.getDefault(),
+                                "%.2f",
+                                totalIncome
+                            )
+                        }",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4CAF50)
                     )
                 }
 
@@ -728,9 +887,16 @@ fun Home_TotalCard() {
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "¥ 4,120",
+                        text = "-${
+                            String.format(
+                                java.util.Locale.getDefault(),
+                                "%.2f",
+                                totalExpense
+                            )
+                        }",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -740,10 +906,12 @@ fun Home_TotalCard() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Home_TopBar() {
+fun Home_TopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
     TopAppBar(
+        scrollBehavior = scrollBehavior,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background,
+            scrolledContainerColor = MaterialTheme.colorScheme.background,
         ),
         modifier = Modifier
             .fillMaxWidth(),
@@ -809,8 +977,15 @@ fun Home_BillItem(bill: QBillEntity) {
         }
 
         // Amount
-        val amountStr = if (isExpense) "-${String.format("%.2f", bill.amount)}" else "+${
+        val amountStr = if (isExpense) "-${
             String.format(
+                java.util.Locale.getDefault(),
+                "%.2f",
+                bill.amount
+            )
+        }" else "+${
+            String.format(
+                java.util.Locale.getDefault(),
                 "%.2f",
                 bill.amount
             )
@@ -847,7 +1022,9 @@ fun Home_BillDayGroup(
     dayOfWeekStr: String,
     expenseTotal: Double,
     incomeTotal: Double,
-    bills: List<QBillEntity>
+    bills: List<QBillEntity>,
+    onEditBill: (QBillEntity) -> Unit = {},
+    onDeleteBill: (QBillEntity) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -885,7 +1062,13 @@ fun Home_BillDayGroup(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (expenseTotal > 0) {
                     Text(
-                        text = "支出: ${String.format("%.2f", expenseTotal)}",
+                        text = "支出: ${
+                            String.format(
+                                java.util.Locale.getDefault(),
+                                "%.2f",
+                                expenseTotal
+                            )
+                        }",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.error // Red text
@@ -894,7 +1077,13 @@ fun Home_BillDayGroup(
                 }
                 if (incomeTotal > 0) {
                     Text(
-                        text = "收入: ${String.format("%.2f", incomeTotal)}",
+                        text = "收入: ${
+                            String.format(
+                                java.util.Locale.getDefault(),
+                                "%.2f",
+                                incomeTotal
+                            )
+                        }",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF4CAF50) // Green text
@@ -916,7 +1105,31 @@ fun Home_BillDayGroup(
                     .fillMaxWidth()
             ) {
                 bills.forEachIndexed { index, bill ->
-                    Home_BillItem(bill = bill)
+                    val editAction = SwipeAction(
+                        icon = rememberVectorPainter(Icons.Default.Edit),
+                        background = Color.Green.copy(alpha = 0.5f),
+                        onSwipe = { onEditBill(bill) }
+                    )
+
+                    val deleteAction = SwipeAction(
+                        icon = rememberVectorPainter(Icons.Default.Delete),
+                        background = Color.Red.copy(alpha = 0.5f),
+                        isUndo = true,
+                        onSwipe = { onDeleteBill(bill) }
+                    )
+                    val cancelAction = SwipeAction(
+                        icon = { Text("取消") },
+                        background = Color.Gray,
+                        onSwipe = { },
+                        isUndo = true
+                    )
+                    SwipeableActionsBox(
+                        swipeThreshold = 0.dp,
+                        startActions = listOf(cancelAction, deleteAction),
+                        endActions = listOf(cancelAction, editAction)
+                    ) {
+                        Home_BillItem(bill = bill)
+                    }
                     // 在元素之间添加了清晰的水平分隔线
                     if (index < bills.size - 1) {
                         HorizontalDivider(

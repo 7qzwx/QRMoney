@@ -1,12 +1,15 @@
 package qzwx.app.feature_home.screen
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import qzwx.app.feature_home.components.*
@@ -22,6 +25,7 @@ import java.time.ZoneId
 fun HomePage(
     viewModel: HomePage_VM = hiltViewModel()
 ) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var showBottomSheet by remember { mutableStateOf(false) }
 
     // Draft state for undo functionality
@@ -31,6 +35,8 @@ fun HomePage(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    var userSelectedDate by remember { mutableStateOf<java.time.LocalDate?>(null) }
 
     if (showBottomSheet) {
         AddNewBill(
@@ -63,11 +69,21 @@ fun HomePage(
     }
 
     Scaffold(
-        topBar = { Home_TopBar() },
-        snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
-        containerColor = MaterialTheme.colorScheme.background, // 在 Scaffold 级别设置整体背景色,
         modifier = Modifier
             .fillMaxSize()
+            .animateContentSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = { Home_TopBar(scrollBehavior) },
+        snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showBottomSheet = true }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "新增账单"
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background, // 在 Scaffold 级别设置整体背景色,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -78,14 +94,73 @@ fun HomePage(
         ) {
 
             item {
-                Button(onClick = {
-                    showBottomSheet = true
-                }) {
-                    Text(text = "新增账单")
+                // Determine the "current" month to display
+                val defaultDate = if (allBills.isNotEmpty()) {
+                    LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(allBills.first().createdAt),
+                        ZoneId.systemDefault()
+                    ).toLocalDate()
+                } else {
+                    LocalDateTime.now().toLocalDate()
                 }
-            }
-            item {
-                Home_TotalCard()
+                val displayedDate = userSelectedDate ?: defaultDate
+
+                val currentYearMonth = "${displayedDate.year}年${displayedDate.monthValue}月"
+
+                val currentMonthBills = allBills.filter {
+                    val billDate = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(it.createdAt),
+                        ZoneId.systemDefault()
+                    ).toLocalDate()
+                    billDate.year == displayedDate.year && billDate.monthValue == displayedDate.monthValue
+                }
+
+                val previousMonthDate = displayedDate.minusMonths(1)
+                val previousMonthBills = allBills.filter {
+                    val billDate = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(it.createdAt),
+                        ZoneId.systemDefault()
+                    ).toLocalDate()
+                    billDate.year == previousMonthDate.year && billDate.monthValue == previousMonthDate.monthValue
+                }
+
+                val currentExpense =
+                    currentMonthBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                val currentIncome =
+                    currentMonthBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+
+                val previousExpense =
+                    previousMonthBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                val previousIncome =
+                    previousMonthBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+
+                val currentNet = currentExpense - currentIncome
+                val previousNet = previousExpense - previousIncome
+
+                val trendPercentStr = if (previousNet != 0.0) {
+                    val percent = if (previousNet < 0 && currentNet < 0) {
+                        ((Math.abs(currentNet) - Math.abs(previousNet)) / Math.abs(previousNet)) * 100
+                    } else {
+                        ((currentNet - previousNet) / Math.abs(previousNet)) * 100
+                    }
+
+                    val sign = if (percent >= 0) "+" else ""
+                    "${sign}${String.format(java.util.Locale.getDefault(), "%.0f", percent)}%"
+                } else {
+                    if (currentNet > 0) "+100%" else if (currentNet < 0) "+100%" else "0%"
+                }
+
+                Home_TotalCard(
+                    currentYearMonth = currentYearMonth,
+                    totalExpense = currentExpense,
+                    totalIncome = currentIncome,
+                    netBalance = currentNet, // pass net balance
+                    trendPercent = trendPercentStr,
+                    currentDate = displayedDate,
+                    onMonthSelected = { newDate ->
+                        userSelectedDate = newDate
+                    }
+                )
             }
 
             // Group and sorted bills
@@ -120,7 +195,24 @@ fun HomePage(
                         dayOfWeekStr = dayOfWeekStr,
                         expenseTotal = expenseTotal,
                         incomeTotal = incomeTotal,
-                        bills = dailyBills
+                        bills = dailyBills,
+                        onEditBill = { billToEdit ->
+                            draftBill = billToEdit
+                            showBottomSheet = true
+                        },
+                        onDeleteBill = { billToDelete ->
+                            scope.launch {
+                                viewModel.deleteBill(billToDelete)
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "已删除账单",
+                                    actionLabel = "撤销",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.insertAndReturnId(billToDelete)
+                                }
+                            }
+                        }
                     )
                 }
             }

@@ -35,24 +35,19 @@ private const val FIRST_LAUNCH_DATE = "first_launch_date"
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MyPage(
-//    navController: NavController,
-//    viewModel: TransactionViewModel = hiltViewModel()
 ) {
-    // 获取数据库中的交易记录数量
-//    val transactions by viewModel.allTransactions.collectAsState(initial = emptyList())
-//    val transactionCount = transactions.size
     // 获取用户首次启动日期
     val context = LocalContext.current
     val firstLaunchDate = getFirstLaunchDate(context)
     val daysCount = calculateDaysSinceFirstLaunch(firstLaunchDate)
 
-    Scaffold(modifier = Modifier.fillMaxSize()) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp),
-
-            ) {
+        ) {
             item {
                 UserInfoCard(
                     daysCount = daysCount,

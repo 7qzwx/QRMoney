@@ -59,5 +59,6 @@ dependencies {
     api("com.maxkeppeler.sheets-compose-dialogs:core:1.3.0")
     api("com.maxkeppeler.sheets-compose-dialogs:calendar:1.3.0")
     api("com.maxkeppeler.sheets-compose-dialogs:clock:1.3.0")
-
+    //自定义左右滑动
+    api("me.saket.swipe:swipe:1.3.0")
 }

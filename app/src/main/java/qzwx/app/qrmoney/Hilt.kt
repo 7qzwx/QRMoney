@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
 import qzwx.app.module_data.QBillDatabase
 import qzwx.app.module_data.dao.QBillDao
+import qzwx.app.module_data.dao.QMyDataDao
 
 @Module
 @InstallIn(SingletonComponent::class) // 作用域：应用级单例，整个APP都能用
@@ -27,6 +28,11 @@ object QAppModule {
     @Provides
     fun qBillDao(qBillDatabase: QBillDatabase): QBillDao {
         return qBillDatabase.qBillDao()
+    }
+
+    @Provides
+    fun qMyDateDao(qBillDatabase: QBillDatabase): QMyDataDao {
+        return qBillDatabase.qMyDateDao()
     }
 
 
