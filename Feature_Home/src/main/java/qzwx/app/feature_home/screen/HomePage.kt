@@ -1,59 +1,80 @@
 package qzwx.app.feature_home.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.launch
+import qzwx.app.feature_home.components.AddNewBill
+import qzwx.app.feature_home.components.Home_SnakBar
 import qzwx.app.feature_home.viewmodel.HomePage_VM
-import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePage(
     viewModel: HomePage_VM = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        var amount by rememberSaveable { mutableStateOf("") }
-        var category by rememberSaveable { mutableStateOf("") }
-        OutlinedTextField(
-            value = amount, onValueChange = { amount = it },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-            placeholder = { Text(text = "金额") }
-        )
-        OutlinedTextField(
-            value = category, onValueChange = { category = it },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
-            placeholder = { Text(text = "种类") }
-        )
-        Button(
-            onClick = {
-                viewModel.insertBill(
-                    QBillEntity(
-                        amount = amount.toLongOrNull() ?: 0L,
-                        type = BillType.EXPENSE,
-                        category = category,
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Draft state for undo functionality
+    var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    if (showBottomSheet) {
+        AddNewBill(
+            initialBill = draftBill,
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            onSaveRequest = { bill ->
+                scope.launch {
+                    draftBill = bill
+                    val insertedId = viewModel.insertAndReturnId(bill)
+
+                    showBottomSheet = false
+
+                    val result = snackbarHostState.showSnackbar(
+                        message = "已新增账单",
+                        actionLabel = "撤销",
+                        duration = SnackbarDuration.Short
                     )
-                )
+
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.deleteBill(bill.copy(id = insertedId))
+                        showBottomSheet = true
+                    } else {
+                        draftBill = null
+                    }
+                }
             }
+        )
+    }   //新增Bill页面
+    Scaffold(
+        snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            Text(text = "添加")
+
+            item {
+                Button(onClick = {
+                    showBottomSheet = true
+                }) {
+                    Text(text = "新增账单")
+                }
+            }
         }
     }
 }

@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
 data class QBillEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 
-    @ColumnInfo(name = "金额") val amount: Long,
+    @ColumnInfo(name = "金额") val amount: Double,
 
     @ColumnInfo(name = "类型") val type: BillType = BillType.EXPENSE,
 

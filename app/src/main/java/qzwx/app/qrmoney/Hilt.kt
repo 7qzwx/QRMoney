@@ -8,7 +8,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
-import qzwx.app.feature_home.repository.HomePage_RT
 import qzwx.app.module_data.QBillDatabase
 import qzwx.app.module_data.dao.QBillDao
 

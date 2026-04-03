@@ -17,11 +17,13 @@ class HomePage_VM @Inject constructor(private val qrepository: HomePage_RT) : Vi
 
         }
 
+    suspend fun insertAndReturnId(bill: QBillEntity): Long {
+        return qrepository.insertBill(bill)
+    }
+
     fun deleteBill(bill: QBillEntity) {
         viewModelScope.launch {
             qrepository.deleteBill(bill)
         }
     }
 }
-
-

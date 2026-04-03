@@ -7,6 +7,8 @@ plugins {
 }
 
 android {
+
+
     namespace = "qzwx.app.qrmoney"
     compileSdk {
         version = release(36) {
@@ -18,9 +20,8 @@ android {
         applicationId = "qzwx.app.qrmoney"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.1"
-
+        versionCode = 2
+        versionName = "1.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -43,14 +44,7 @@ android {
     }
 }
 
-//androidComponents {
-//    onVariants(selector().all()) { variant ->
-//        val versionName = variant.versionName.orNull ?: "1.0.0"
-//        variant.outputs.forEach { output ->
-//            output.outputFileName.set("Q记账_${variant.name}_v$versionName.apk")
-//        }
-//    }
-//}
+
 
 dependencies {
 
