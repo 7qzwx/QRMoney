@@ -6,6 +6,6 @@ import androidx.room.PrimaryKey
 @Entity
 data class QMyDateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
-
-
+    val firstLaunchDate: Long,
+    val transactionCount: Int
     )

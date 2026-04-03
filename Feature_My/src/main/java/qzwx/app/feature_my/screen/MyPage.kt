@@ -14,19 +14,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import qzwx.app.feature_my.viewmodel.MyPage_VM
 import java.util.concurrent.TimeUnit
 
 private const val FIRST_LAUNCH_PREF = "first_launch_pref"
@@ -35,24 +35,37 @@ private const val FIRST_LAUNCH_DATE = "first_launch_date"
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MyPage(
+    viewModel: MyPage_VM = hiltViewModel()
 ) {
-    // 获取用户首次启动日期
-    val context = LocalContext.current
-    val firstLaunchDate = getFirstLaunchDate(context)
-    val daysCount = calculateDaysSinceFirstLaunch(firstLaunchDate)
+    val myDateState by viewModel.myDate.collectAsState()
+    val actualTransactionCount by viewModel.actualTransactionCount.collectAsState()
+
+    // 检查并初始化数据库中的首次运行时间
+    LaunchedEffect(myDateState) {
+        if (myDateState == null) {
+            viewModel.initializeFirstLaunchDate(System.currentTimeMillis())
+        }
+    }
+
+    // 计算天数
+    val daysCount = myDateState?.firstLaunchDate?.let {
+        calculateDaysSinceFirstLaunch(it)
+    } ?: 1
+
+    // 账单数量从数据库的实际账单表获取
+    val transactionCount = actualTransactionCount
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize().background(MaterialTheme.colorScheme.background)
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp),
         ) {
             item {
                 UserInfoCard(
                     daysCount = daysCount,
-//                    transactionCount = transactionCount
-                    transactionCount = 520  //暂时用520代替
+                    transactionCount = transactionCount
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -474,6 +487,3 @@ fun SettingItem(
         )
     }
 }
-
-
-

@@ -18,6 +18,9 @@ interface QBillDao {
     @Query("SELECT * FROM QBillEntity ORDER BY `创建时间` DESC")
     fun getAllBills(): Flow<List<QBillEntity>>
 
+    @Query("SELECT COUNT(id) FROM QBillEntity")
+    fun getBillCount(): Flow<Int>
+
     @Query("SELECT * FROM QBillEntity WHERE id = :id")
     suspend fun getBillById(id: Long): QBillEntity?
 }

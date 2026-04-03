@@ -687,16 +687,14 @@ fun Home_TotalCard(
     currentDate: LocalDate = LocalDate.now(),
     onMonthSelected: (LocalDate) -> Unit = {}
 ) {
-
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
         Column(
@@ -1094,14 +1092,14 @@ fun Home_BillDayGroup(
 
         // Bill Items wrapped in Surface container independently from Header (Material3 surface)
         Surface(
-//            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceContainer,
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
+//                    .background(MaterialTheme.colorScheme.surface)
                     .fillMaxWidth()
             ) {
                 bills.forEachIndexed { index, bill ->
@@ -1118,7 +1116,12 @@ fun Home_BillDayGroup(
                         onSwipe = { onDeleteBill(bill) }
                     )
                     val cancelAction = SwipeAction(
-                        icon = { Text("取消") },
+                        icon = {
+                            Text(
+                                "取消",
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+                            )
+                        },
                         background = Color.Gray,
                         onSwipe = { },
                         isUndo = true
