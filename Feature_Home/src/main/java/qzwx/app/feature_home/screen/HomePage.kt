@@ -55,7 +55,8 @@ fun HomePage(
                 }
             }
         )
-    }   //新增Bill页面
+    }
+
     Scaffold(
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
         modifier = Modifier

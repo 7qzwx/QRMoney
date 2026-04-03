@@ -55,4 +55,9 @@ dependencies {
     //Icons图标
     api("androidx.compose.material:material-icons-core:1.7.8")
     api("androidx.compose.material:material-icons-extended:1.7.8")
+    //时间日期选择器
+    api("com.maxkeppeler.sheets-compose-dialogs:core:1.3.0")
+    api("com.maxkeppeler.sheets-compose-dialogs:calendar:1.3.0")
+    api("com.maxkeppeler.sheets-compose-dialogs:clock:1.3.0")
+
 }
