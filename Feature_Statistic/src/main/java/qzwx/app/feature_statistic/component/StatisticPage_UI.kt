@@ -832,11 +832,13 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
     var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
+    var isHeatmapExpense by remember { mutableStateOf(true) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
     val primaryContainer = MaterialTheme.colorScheme.primaryContainer
     val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
+    val errorColor = MaterialTheme.colorScheme.error
 
     val yearsList = remember {
         (0..19).map { LocalDate.now().year - it }
@@ -919,6 +921,161 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                 balanceLabel = "年结余",
                 balanceAmount = yearBalance
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Heatmap Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "收支热力", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
+                ) {
+                    val heatExpenseBgColor by animateColorAsState(
+                        if (isHeatmapExpense) primaryColor else surfaceColor,
+                        label = "HeatExpenseBg"
+                    )
+                    val heatExpenseTextColor by animateColorAsState(
+                        if (isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "HeatExpenseText"
+                    )
+                    val heatIncomeBgColor by animateColorAsState(
+                        if (!isHeatmapExpense) primaryColor else surfaceColor,
+                        label = "HeatIncomeBg"
+                    )
+                    val heatIncomeTextColor by animateColorAsState(
+                        if (!isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "HeatIncomeText"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .background(heatExpenseBgColor)
+                            .clickable { isHeatmapExpense = true }
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "支出",
+                            color = heatExpenseTextColor,
+                            fontWeight = if (isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(heatIncomeBgColor)
+                            .clickable { isHeatmapExpense = false }
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "收入",
+                            color = heatIncomeTextColor,
+                            fontWeight = if (!isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Heatmap Grid
+            AnimatedContent(
+                targetState = isHeatmapExpense,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                },
+                label = "HeatmapContentAnim"
+            ) { targetIsExpense ->
+                val typeToFilter = if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
+                val activeColor = if (targetIsExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
+                val inactiveColor = Color(0xFFEEEEEE)
+
+                val heatBills = yearlyBills.filter { it.type == typeToFilter }
+                val billDates = heatBills.map {
+                    Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                }.toSet()
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    for (row in 0 until 3) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            for (col in 0 until 4) {
+                                val monthIndex = row * 4 + col + 1
+                                val isLeap = java.time.Year.isLeap(selectedYear.toLong())
+                                val daysInMonth = java.time.Month.of(monthIndex).length(isLeap)
+                                val firstDateOfMonth = LocalDate.of(selectedYear, monthIndex, 1)
+                                val firstDayOfWeek = firstDateOfMonth.dayOfWeek.value // 1 (Mon) - 7 (Sun)
+
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    Text(
+                                        text = "${monthIndex}月",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 6.dp, start = 2.dp)
+                                    )
+                                    // Draw month mini calendar map
+                                    val weeks = Math.ceil((daysInMonth + firstDayOfWeek - 1) / 7.0).toInt()
+                                    for (w in 0 until 6) { // Draw exactly 6 rows to keep all month grids equal height
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            for (d in 1..7) {
+                                                val dayIndex = w * 7 + d
+                                                val dateDay = dayIndex - firstDayOfWeek + 1
+                                                if (dateDay in 1..daysInMonth) {
+                                                    val currentDate = LocalDate.of(selectedYear, monthIndex, dateDay)
+                                                    val cellColor = if (billDates.contains(currentDate)) activeColor else inactiveColor
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .aspectRatio(1f)
+                                                            .padding(1.dp)
+                                                            .clip(RoundedCornerShape(50))
+                                                            .background(cellColor)
+                                                    )
+                                                } else {
+                                                    // Empty cell space maintaining proportion
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .aspectRatio(1f)
+                                                            .padding(1.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (row < 2) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

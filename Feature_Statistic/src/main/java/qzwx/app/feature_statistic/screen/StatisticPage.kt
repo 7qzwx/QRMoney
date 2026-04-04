@@ -43,7 +43,7 @@ fun StatisticPage() {
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Reduced spacing from 16.dp to 8.dp
                 ) {
                     tabs.forEachIndexed { index, title ->
                         val isSelected = pagerState.currentPage == index
@@ -56,14 +56,14 @@ fun StatisticPage() {
                                         pagerState.animateScrollToPage(index)
                                     }
                                 }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 8.dp, vertical = 6.dp), // Reduced horizontal padding
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = title,
                                 color = if (isSelected) Color.White else Color.Gray,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 16.sp
+                                fontSize = 14.sp // Reduced font size
                             )
                         }
                     }
