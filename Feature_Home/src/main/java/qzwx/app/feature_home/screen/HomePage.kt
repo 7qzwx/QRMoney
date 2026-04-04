@@ -22,6 +22,7 @@ import qzwx.app.feature_home.viewmodel.HomePage_VM
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_ui.nav3.UIRoute
+import qzwx.app.feature_home.nav3.HomeRoute
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -80,7 +81,12 @@ fun HomePage(
             .fillMaxSize()
             .animateContentSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { Home_TopBar(scrollBehavior) },
+        topBar = {
+            Home_TopBar(
+                scrollBehavior = scrollBehavior,
+                onSearchClick = { backStack.add(HomeRoute.Search) }
+            )
+        },
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
         floatingActionButton = {
             FloatingActionButton(onClick = { showBottomSheet = true }) {

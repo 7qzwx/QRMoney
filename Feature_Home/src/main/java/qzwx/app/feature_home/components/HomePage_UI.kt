@@ -818,7 +818,10 @@ fun Home_TotalCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Home_TopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
+fun Home_TopBar(
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    onSearchClick: () -> Unit = {}
+) {
     TopAppBar(
         scrollBehavior = scrollBehavior,
         colors = TopAppBarDefaults.topAppBarColors(
@@ -837,7 +840,7 @@ fun Home_TopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
             )
         },
         actions = {
-            IconButton(onClick = { /* TODO: Open Search */ }) {
+            IconButton(onClick = onSearchClick) {
                 Icon(
                     modifier = Modifier.padding(end = 16.dp),
                     imageVector = Icons.Default.Search,

@@ -33,12 +33,8 @@ fun CalendarTopBar(
     currentMonth: YearMonth,
     onTodayClick: () -> Unit,
     onMonthClick: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-        ),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -67,8 +63,7 @@ fun CalendarTopBar(
                     contentDescription = "回到今天"
                 )
             }
-        },
-        modifier = modifier
+        }
     )
 }
 
