@@ -23,8 +23,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.animation.*
 import qzwx.app.module_ui.components.Shared_MonthYearPickerDialog
+import qzwx.app.module_data.entity.QBillEntity
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Icon
+import androidx.compose.material3.FloatingActionButton
+import qzwx.app.module_ui.components.Shared_AddNewBill
 
 @Composable
 fun CalendarPage(
@@ -50,8 +60,52 @@ fun CalendarPage(
 
     val coroutineScope = rememberCoroutineScope()
     var showMonthPicker by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
+
+    if (showBottomSheet) {
+        Shared_AddNewBill(
+            initialBill = draftBill,
+            defaultDate = selectedDate ?: today,
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            onSaveRequest = { bill ->
+                coroutineScope.launch {
+                    draftBill = bill
+                    val insertedId = viewModel.insertAndReturnId(bill)
+                    showBottomSheet = false
+                    val result = snackbarHostState.showSnackbar(
+                        message = "已新增账单",
+                        actionLabel = "撤销",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.deleteBill(bill.copy(id = insertedId))
+                        showBottomSheet = true
+                    } else {
+                        draftBill = null
+                    }
+                }
+            }
+        )
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                draftBill = null
+                showBottomSheet = true
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "新增账单"
+                )
+            }
+        },
         topBar = {
             CalendarTopBar(
                 currentMonth = state.firstVisibleMonth.yearMonth, // 更新为当前日历滑动到的真实月份
@@ -145,8 +199,23 @@ fun CalendarPage(
                                 expenseTotal = expenseTotal,
                                 incomeTotal = incomeTotal,
                                 bills = selectedDateBills,
-                                onEditBill = { /* TODO */ },
-                                onDeleteBill = { /* TODO */ }
+                                onEditBill = { billToEdit ->
+                                    draftBill = billToEdit
+                                    showBottomSheet = true
+                                },
+                                onDeleteBill = { billToDelete ->
+                                    coroutineScope.launch {
+                                        viewModel.deleteBill(billToDelete)
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "已删除账单",
+                                            actionLabel = "撤销",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.insertAndReturnId(billToDelete)
+                                        }
+                                    }
+                                }
                             )
                         }
                     }

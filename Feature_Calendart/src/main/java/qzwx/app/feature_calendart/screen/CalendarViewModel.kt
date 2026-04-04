@@ -22,5 +22,13 @@ class CalendarViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    suspend fun deleteBill(bill: QBillEntity) {
+        billDao.deleteBill(bill)
+    }
+
+    suspend fun insertAndReturnId(bill: QBillEntity): Long {
+        return billDao.insertBill(bill)
+    }
 }
 
