@@ -1,16 +1,17 @@
 package qzwx.app.module_ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +39,7 @@ fun Shared_CategoryPieChart(
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier) {
         // Pie Chart Section Header
         Row(
             modifier = Modifier
@@ -110,15 +111,16 @@ fun Shared_CategoryPieChart(
             },
             label = "PieChartContentAnim"
         ) { targetIsPieChartExpense ->
-            // Filter by expense or income based on internal state
-            val filteredBills = bills.filter {
-                it.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
-            }
 
-            val totalPieAmount = filteredBills.sumOf { it.amount }
-            val categoryGroups: List<Pair<String, Double>> = filteredBills.groupBy { it.category }
-                .mapValues { entry -> entry.value.sumOf { b -> b.amount } }
-                .toList().sortedByDescending { it.second }
+            // Filters base on pure list passed in
+            val pieBills = bills.filter { bill ->
+                bill.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
+            }
+            val totalPieAmount = pieBills.sumOf { it.amount }
+            val categoryGroups = pieBills.groupBy { it.category }
+                .mapValues { it.value.sumOf { b -> b.amount } }
+                .toList()
+                .sortedByDescending { it.second }
 
             // Reset selected category if there's no matching group
             LaunchedEffect(categoryGroups) {
@@ -128,8 +130,9 @@ fun Shared_CategoryPieChart(
             }
 
             val colors = listOf(
-                Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFF4CAF50),
-                Color(0xFF9C27B0), Color(0xFF00BCD4), Color(0xFFFFEB3B), Color(0xFF795548)
+                Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800),
+                Color(0xFF4CAF50), Color(0xFF9C27B0), Color(0xFF00BCD4),
+                Color(0xFFFFEB3B), Color(0xFF795548)
             )
 
             if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
@@ -167,7 +170,9 @@ fun Shared_CategoryPieChart(
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
                             categoryGroups.forEachIndexed { index, pair ->
                                 val percent = (pair.second / totalPieAmount) * 100
                                 val isPieSelected = pair.first == selectedPieCategory
@@ -266,9 +271,7 @@ fun Shared_CategoryPieChart(
                                                     "%.2f",
                                                     pair.second
                                                 )
-                                            }",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold
+                                            }", fontSize = 14.sp, fontWeight = FontWeight.Bold
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -279,7 +282,7 @@ fun Shared_CategoryPieChart(
                                             .height(8.dp)
                                             .clip(RoundedCornerShape(4.dp)),
                                         color = colors[index % colors.size],
-                                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -289,9 +292,7 @@ fun Shared_CategoryPieChart(
                                                 "%.1f",
                                                 percent
                                             )
-                                        }%",
-                                        fontSize = 12.sp,
-                                        color = Color.Gray
+                                        }%", fontSize = 12.sp, color = Color.Gray
                                     )
                                 }
                             }
@@ -311,3 +312,4 @@ fun Shared_CategoryPieChart(
         }
     }
 }
+
