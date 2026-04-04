@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.*
+import qzwx.app.feature_statistic.viewmodel.MonthlyChartState
 import qzwx.app.feature_statistic.viewmodel.StatisticPage_VM
 import qzwx.app.module_data.entity.BillType
 import java.time.DayOfWeek
@@ -296,10 +297,8 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
 @Composable
 fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
-    val allBills by viewModel.allBills.collectAsState(initial = emptyList())
-    val coroutineScope = rememberCoroutineScope()
-
-    var selectedDate by remember { mutableStateOf(LocalDate.now().withDayOfMonth(1)) }
+    val selectedDate by viewModel.selectedMonth.collectAsState()
+    val monthlyState by viewModel.monthlyChartState.collectAsState(initial = MonthlyChartState())
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -309,80 +308,6 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
     val monthsList = remember {
         (0..24).map { LocalDate.now().withDayOfMonth(1).minusMonths(it.toLong()) }
-    }
-
-    // Data filtering
-    val currentMonthBills = remember(selectedDate, allBills) {
-        allBills.filter {
-            val date =
-                Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
-            date.year == selectedDate.year && date.monthValue == selectedDate.monthValue
-        }
-    }
-
-    val monthExpense = currentMonthBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-    val monthIncome = currentMonthBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
-    val monthBalance = monthIncome - monthExpense
-
-    val (chartData, lineChartData) = remember(selectedDate, currentMonthBills) {
-        val daysInMonth = selectedDate.lengthOfMonth()
-
-        // Optimize: Group by day first (O(N) operation) instead of filtering 31 times
-        val expensesByDay = currentMonthBills
-            .filter { it.type == BillType.EXPENSE }
-            .groupBy {
-                Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
-                    .toLocalDate().dayOfMonth
-            }
-            .mapValues { (_, bills) -> bills.sumOf { it.amount } }
-
-        val incomesByDay = currentMonthBills
-            .filter { it.type == BillType.INCOME }
-            .groupBy {
-                Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
-                    .toLocalDate().dayOfMonth
-            }
-            .mapValues { (_, bills) -> bills.sumOf { it.amount } }
-
-        val barDataList = (1..daysInMonth).map { day ->
-            val dailyExpense = expensesByDay[day] ?: 0.0
-            val dailyIncome = incomesByDay[day] ?: 0.0
-            val labelStr = if (day % 2 != 0) day.toString() else " "
-
-            Bars(
-                label = labelStr,
-                values = listOf(
-                    Bars.Data(label = "支出", value = dailyExpense, color = SolidColor(errorColor)),
-                    Bars.Data(label = "收入", value = dailyIncome, color = SolidColor(primaryColor))
-                )
-            )
-        }
-
-        val expensesList = (1..daysInMonth).map { expensesByDay[it] ?: 0.0 }
-        val incomesList = (1..daysInMonth).map { incomesByDay[it] ?: 0.0 }
-
-        val theLineChartData = listOf(
-            Line(
-                label = "支出",
-                values = expensesList,
-                color = SolidColor(errorColor),
-                curvedEdges = true,
-                drawStyle = DrawStyle.Stroke(width = 2.dp),
-                firstGradientFillColor = Color.Red.copy(alpha = .5f),
-                secondGradientFillColor = Color.Transparent,
-            ),
-            Line(
-                label = "收入",
-                values = incomesList,
-                color = SolidColor(primaryColor),
-                curvedEdges = true,
-                drawStyle = DrawStyle.Stroke(width = 2.dp),
-                firstGradientFillColor = Color.Green.copy(alpha = .5f),
-                secondGradientFillColor = Color.Transparent,
-            )
-        )
-
-        Pair(barDataList, theLineChartData)
     }
 
     LazyColumn(
@@ -425,7 +350,7 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(if (isSelected) primaryColor else surfaceColor)
                                 .clickable {
-                                    selectedDate = monthDate
+                                    viewModel.selectMonth(monthDate)
                                 }
                                 .border(
                                     width = 1.dp,
@@ -474,7 +399,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.getDefault(), "%.2f", monthExpense),
+                                text = String.format(
+                                    Locale.getDefault(),
+                                    "%.2f",
+                                    monthlyState.monthExpense
+                                ),
                                 color = onPrimaryContainer,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
@@ -488,7 +417,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.getDefault(), "%.2f", monthIncome),
+                                text = String.format(
+                                    Locale.getDefault(),
+                                    "%.2f",
+                                    monthlyState.monthIncome
+                                ),
                                 color = onPrimaryContainer,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
@@ -502,7 +435,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.getDefault(), "%.2f", monthBalance),
+                                text = String.format(
+                                    Locale.getDefault(),
+                                    "%.2f",
+                                    monthlyState.monthBalance
+                                ),
                                 color = onPrimaryContainer,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
@@ -534,39 +471,44 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     .height(260.dp)
                     .padding(horizontal = 16.dp)
             ) {
-                ColumnChart(
-                    animationDelay = 5,
-                    modifier = Modifier.fillMaxSize(),
-                    data = chartData,
-                    barProperties = BarProperties(
-                        spacing = 2.dp,
-                        cornerRadius = Bars.Data.Radius.Rectangle(topRight = 4.dp, topLeft = 4.dp),
-                        thickness = 4.dp
-                    ),
-                    labelProperties = LabelProperties(
-                        enabled = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp),
-                        rotation = LabelProperties.Rotation(
-                            degree = 0f
-                        )
-                    ),
-                    indicatorProperties = HorizontalIndicatorProperties(
-                        enabled = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                    ),
-                    gridProperties = GridProperties(
-                        xAxisProperties = GridProperties.AxisProperties(enabled = false),
-                        yAxisProperties = GridProperties.AxisProperties(
-                            enabled = true, color = SolidColor(
-                                Color.LightGray.copy(alpha = 0.5f)
+                if (monthlyState.isReady && monthlyState.barDataList.isNotEmpty()) {
+                    ColumnChart(
+                        animationDelay = 5,
+                        modifier = Modifier.fillMaxSize(),
+                        data = monthlyState.barDataList,
+                        barProperties = BarProperties(
+                            spacing = 2.dp,
+                            cornerRadius = Bars.Data.Radius.Rectangle(
+                                topRight = 4.dp,
+                                topLeft = 4.dp
+                            ),
+                            thickness = 4.dp
+                        ),
+                        labelProperties = LabelProperties(
+                            enabled = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp),
+                            rotation = LabelProperties.Rotation(
+                                degree = 0f
                             )
+                        ),
+                        indicatorProperties = HorizontalIndicatorProperties(
+                            enabled = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
+                        ),
+                        gridProperties = GridProperties(
+                            xAxisProperties = GridProperties.AxisProperties(enabled = false),
+                            yAxisProperties = GridProperties.AxisProperties(
+                                enabled = true, color = SolidColor(
+                                    Color.LightGray.copy(alpha = 0.5f)
+                                )
+                            )
+                        ),
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
                         )
-                    ),
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
                     )
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -591,30 +533,32 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     .height(260.dp)
                     .padding(horizontal = 16.dp)
             ) {
-                LineChart(
-                    modifier = Modifier.fillMaxSize(),
-                    data = lineChartData,
-                    labelProperties = LabelProperties(
-                        rotation = LabelProperties.Rotation(
-                            degree = 0f
+                if (monthlyState.isReady && monthlyState.theLineChartData.isNotEmpty()) {
+                    LineChart(
+                        modifier = Modifier.fillMaxSize(),
+                        data = monthlyState.theLineChartData,
+                        labelProperties = LabelProperties(
+                            rotation = LabelProperties.Rotation(
+                                degree = 0f
+                            ),
+                            enabled = true,
+                            labels = (1..selectedDate.lengthOfMonth()).map { if (it % 2 != 0) it.toString() else " " },
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
                         ),
-                        enabled = true,
-                        labels = (1..selectedDate.lengthOfMonth()).map { if (it % 2 != 0) it.toString() else " " },
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                    ),
-                    indicatorProperties = HorizontalIndicatorProperties(
-                        enabled = true,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                    ),
-                    gridProperties = GridProperties(
-                        xAxisProperties = GridProperties.AxisProperties(enabled = false),
-                        yAxisProperties = GridProperties.AxisProperties(
-                            enabled = true, color = SolidColor(
-                                Color.LightGray.copy(alpha = 0.5f)
+                        indicatorProperties = HorizontalIndicatorProperties(
+                            enabled = true,
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
+                        ),
+                        gridProperties = GridProperties(
+                            xAxisProperties = GridProperties.AxisProperties(enabled = false),
+                            yAxisProperties = GridProperties.AxisProperties(
+                                enabled = true, color = SolidColor(
+                                    Color.LightGray.copy(alpha = 0.5f)
+                                )
                             )
                         )
                     )
-                )
+                }
             }
         }
     }

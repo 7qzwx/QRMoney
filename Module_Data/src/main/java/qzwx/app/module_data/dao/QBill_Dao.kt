@@ -24,6 +24,9 @@ interface QBillDao {
     @Query("SELECT * FROM QBillEntity ORDER BY `创建时间` DESC")
     fun getAllBills(): Flow<List<QBillEntity>>
 
+    @Query("SELECT * FROM QBillEntity WHERE `创建时间` >= :startMillis AND `创建时间` < :endMillis ORDER BY `创建时间` DESC")
+    fun getBillsBetween(startMillis: Long, endMillis: Long): Flow<List<QBillEntity>>
+
     @Query("SELECT COUNT(id) FROM QBillEntity")
     fun getBillCount(): Flow<Int>
 
