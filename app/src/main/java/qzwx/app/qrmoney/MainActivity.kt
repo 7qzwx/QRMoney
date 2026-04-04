@@ -10,20 +10,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import qzwx.app.feature_asset.nav3.AssetRouteBuilder
 import qzwx.app.feature_calendart.nav3.CalendarRouteBuilder
 import qzwx.app.feature_home.nav3.HomeRouteBuilder
 import qzwx.app.feature_my.nav3.MyRouteBuilder
 import qzwx.app.feature_statistic.nav3.StatisticRouteBuilder
+import qzwx.app.module_data.dao.QBillDao
+import qzwx.app.module_data.utils.MockDataUtils
 import qzwx.app.module_ui.nav3.UiRouteBuilder
 import qzwx.app.module_ui.theme.QAppTheme
 import qzwx.app.qrmoney.nav3.BottomBarRoute
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -89,7 +97,7 @@ fun QApp() {
                 UiRouteBuilder(
                     onBackClick = {
                         if (backStack.size > 1) {
-                            backStack.removeLast()
+                            backStack.removeLastOrNull()
                         }
                     }
                 )
@@ -97,3 +105,4 @@ fun QApp() {
         )
     }
 }
+

@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.geometry)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -69,4 +70,10 @@ dependencies {
     //hilt
     implementation("com.google.dagger:hilt-android:2.59.2")
     ksp("com.google.dagger:hilt-compiler:2.59.2")
+    //chart
+    implementation("androidx.paging:paging-runtime:3.4.2")
+    testImplementation("androidx.paging:paging-common:3.4.2")
+    implementation("androidx.paging:paging-rxjava3:3.4.2")
+    implementation("androidx.paging:paging-guava:3.4.2")
+    implementation("androidx.paging:paging-compose:3.4.2")
 }

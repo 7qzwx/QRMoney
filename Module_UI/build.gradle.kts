@@ -65,10 +65,8 @@ dependencies {
     //日历组件
     api("com.kizitonwose.calendar:view:2.10.1")
     api("com.kizitonwose.calendar:compose:2.10.1")
-
-    //实体类依赖
+    //引用其他库
     api(project(":Module_Data"))
-
     //nav3
     api(libs.androidx.navigation3.ui)
     api(libs.androidx.navigation3.runtime)
@@ -78,4 +76,12 @@ dependencies {
     //hilt
     implementation("com.google.dagger:hilt-android:2.59.2")
     ksp("com.google.dagger:hilt-compiler:2.59.2")
+    //chart
+    api("io.github.ehsannarmani:compose-charts:0.2.5")
+    //Pager3
+    api("androidx.paging:paging-runtime:3.4.2")
+    testImplementation("androidx.paging:paging-common:3.4.2")
+    api("androidx.paging:paging-rxjava3:3.4.2")
+    api("androidx.paging:paging-guava:3.4.2")
+    api("androidx.paging:paging-compose:3.4.2")
 }

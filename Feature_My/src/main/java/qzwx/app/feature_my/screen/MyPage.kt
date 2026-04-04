@@ -35,6 +35,7 @@ private const val FIRST_LAUNCH_DATE = "first_launch_date"
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MyPage(
+    viewModel1: DevTestViewModel = hiltViewModel(),
     viewModel: MyPage_VM = hiltViewModel()
 ) {
     val myDateState by viewModel.myDate.collectAsState()
@@ -58,7 +59,8 @@ fun MyPage(
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize().background(MaterialTheme.colorScheme.background)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp),
         ) {
@@ -88,16 +90,16 @@ fun MyPage(
                 SettingsCard {
                     SettingItem(
                         icon = Icons.Outlined.CloudSync,
-                        title = "云同步",
+                        title = "云同步（插入模拟数据）",
                         trailing = "未开启，数据仅存本地",
                         trailingColor = Color.Red,
-                        onClick = { /* 云同步点击 */ }
+                        onClick = { viewModel1.insertMockData() }
                     )
                     Divider()
                     SettingItem(
                         icon = Icons.Outlined.FileDownload,
-                        title = "数据备份",
-                        onClick = { /* 数据备份点击 */ }
+                        title = "数据备份(删除所有数据)",
+                        onClick = { viewModel1.clearAllData() }
                     )
                     Divider()
                     SettingItem(

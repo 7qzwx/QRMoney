@@ -9,8 +9,14 @@ interface QBillDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBill(bill: QBillEntity): Long   //Long类型好处：插入成功返回新增账单的ID
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBills(bills: List<QBillEntity>)
+
     @Delete
     suspend fun deleteBill(bill: QBillEntity)
+
+    @Query("DELETE FROM QBillEntity")
+    suspend fun deleteAllBills()
 
     @Update
     suspend fun updateBill(bill: QBillEntity)
