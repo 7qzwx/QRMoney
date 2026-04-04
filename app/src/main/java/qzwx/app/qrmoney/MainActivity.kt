@@ -21,6 +21,7 @@ import qzwx.app.feature_calendart.nav3.CalendarRouteBuilder
 import qzwx.app.feature_home.nav3.HomeRouteBuilder
 import qzwx.app.feature_my.nav3.MyRouteBuilder
 import qzwx.app.feature_statistic.nav3.StatisticRouteBuilder
+import qzwx.app.module_ui.nav3.UiRouteBuilder
 import qzwx.app.module_ui.theme.QAppTheme
 import qzwx.app.qrmoney.nav3.BottomBarRoute
 
@@ -80,11 +81,18 @@ fun QApp() {
                 rememberViewModelStoreNavEntryDecorator()
             ),
             entryProvider = entryProvider {
-                HomeRouteBuilder()
-                CalendarRouteBuilder()
+                HomeRouteBuilder(backStack)
+                CalendarRouteBuilder(backStack)
                 AssetRouteBuilder()
                 MyRouteBuilder()
                 StatisticRouteBuilder()
+                UiRouteBuilder(
+                    onBackClick = {
+                        if (backStack.size > 1) {
+                            backStack.removeLast()
+                        }
+                    }
+                )
             }
         )
     }

@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
 import qzwx.app.feature_home.components.AddNewBill
 import qzwx.app.feature_home.components.Home_SnakBar
@@ -19,6 +21,7 @@ import qzwx.app.feature_home.components.Home_TotalCard
 import qzwx.app.feature_home.viewmodel.HomePage_VM
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
+import qzwx.app.module_ui.nav3.UIRoute
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -26,7 +29,8 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePage(
-    viewModel: HomePage_VM = hiltViewModel()
+    viewModel: HomePage_VM = hiltViewModel(),
+    backStack: NavBackStack<NavKey>
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -212,9 +216,12 @@ fun HomePage(
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.insertAndReturnId(billToDelete)
+                                    viewModel.insertBill(billToDelete)
                                 }
                             }
+                        },
+                        onItemClick = { clickedBill ->
+                            backStack.add(UIRoute.BillDetail(clickedBill))
                         }
                     )
                 }

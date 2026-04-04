@@ -36,6 +36,9 @@ fun CalendarTopBar(
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+        ),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -81,9 +84,11 @@ fun CalendarDayCell(
 ) {
     if (day.position != DayPosition.MonthDate) {
         // 如果不是当月日期（如上个月或下个月），渲染空白区域隐藏
-        Spacer(modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 1.dp))
+        Spacer(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp, horizontal = 1.dp)
+        )
         return
     }
 
@@ -157,9 +162,12 @@ fun CalendarDayCell(
 
 @Composable
 fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(bottom = 8.dp)) {
+    Row(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+    ) {
         for (dayOfWeek in daysOfWeek) {
             Text(
                 modifier = Modifier.weight(1f),

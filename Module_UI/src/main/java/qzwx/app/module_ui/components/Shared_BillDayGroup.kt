@@ -1,6 +1,7 @@
 package qzwx.app.module_ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,7 +35,7 @@ import qzwx.app.module_ui.data.billCategoryList
 import kotlin.collections.forEachIndexed
 
 @Composable
-fun Shared_BillItem(bill: QBillEntity) {
+fun Shared_BillItem(bill: QBillEntity, onClick: () -> Unit = {}) {
     val categoryInfo =
         billCategoryList.find { it.name == bill.category } ?: billCategoryList.first()
     val isExpense = bill.type == BillType.EXPENSE
@@ -42,6 +43,7 @@ fun Shared_BillItem(bill: QBillEntity) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 16.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -109,7 +111,8 @@ fun Shared_BillDayGroup(
     incomeTotal: Double,
     bills: List<QBillEntity>,
     onEditBill: (QBillEntity) -> Unit = {},
-    onDeleteBill: (QBillEntity) -> Unit = {}
+    onDeleteBill: (QBillEntity) -> Unit = {},
+    onItemClick: (QBillEntity) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -217,7 +220,7 @@ fun Shared_BillDayGroup(
                         startActions = listOf(cancelAction, deleteAction),
                         endActions = listOf(cancelAction, editAction)
                     ) {
-                        Shared_BillItem(bill = bill)
+                        Shared_BillItem(bill = bill, onClick = { onItemClick(bill) })
                     }
                     if (index < bills.size - 1) {
                         HorizontalDivider(

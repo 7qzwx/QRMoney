@@ -1,45 +1,44 @@
 package qzwx.app.feature_calendart.screen
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Scaffold
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.daysOfWeek
+import kotlinx.coroutines.launch
+import qzwx.app.feature_calendart.compenent.CalendarDayCell
+import qzwx.app.feature_calendart.compenent.CalendarTopBar
+import qzwx.app.feature_calendart.compenent.DaysOfWeekTitle
+import qzwx.app.feature_calendart.viewmodel.Calendar_VM
+import qzwx.app.module_data.entity.BillType
+import qzwx.app.module_data.entity.QBillEntity
+import qzwx.app.module_ui.components.Shared_AddNewBill
+import qzwx.app.module_ui.components.Shared_BillDayGroup
+import qzwx.app.module_ui.components.Shared_MonthYearPickerDialog
+import qzwx.app.module_ui.nav3.UIRoute
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import qzwx.app.feature_calendart.compenent.CalendarDayCell
-import qzwx.app.feature_calendart.compenent.CalendarTopBar
-import qzwx.app.feature_calendart.compenent.DaysOfWeekTitle
-import qzwx.app.module_data.entity.BillType
-import qzwx.app.module_ui.components.Shared_BillDayGroup
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.animation.*
-import qzwx.app.module_ui.components.Shared_MonthYearPickerDialog
-import qzwx.app.module_data.entity.QBillEntity
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.FloatingActionButton
-import qzwx.app.module_ui.components.Shared_AddNewBill
 
 @Composable
 fun CalendarPage(
-    modifier: Modifier = Modifier,
-    viewModel: CalendarViewModel = hiltViewModel()
+    viewModel: Calendar_VM = hiltViewModel(),
+    backStack: NavBackStack<NavKey>
 ) {
     val bills by viewModel.bills.collectAsState()
 
@@ -94,6 +93,7 @@ fun CalendarPage(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
@@ -118,7 +118,6 @@ fun CalendarPage(
                 onMonthClick = { showMonthPicker = true }
             )
         },
-        modifier = modifier
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -130,6 +129,7 @@ fun CalendarPage(
 
             // 日历主体
             HorizontalCalendar(
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 state = state,
                 dayContent = { day ->
                     // 过滤出当天的账单
@@ -164,10 +164,13 @@ fun CalendarPage(
             AnimatedContent(
                 targetState = selectedDate,
                 transitionSpec = {
-                    (slideInHorizontally { width -> width / 2 } + fadeIn()).togetherWith(slideOutHorizontally { width -> -width / 2 } + fadeOut())
+                    (slideInHorizontally { width -> width / 2 } + fadeIn()).togetherWith(
+                        slideOutHorizontally { width -> -width / 2 } + fadeOut())
                 },
                 label = "daily_bills_animation",
-                modifier = Modifier.fillMaxWidth().weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) { animatedDate ->
                 val selectedDateBills = bills.filter { bill ->
                     val billDate = Instant.ofEpochMilli(bill.createdAt)
@@ -187,8 +190,10 @@ fun CalendarPage(
                         7 -> "星期日"
                         else -> ""
                     }
-                    val expenseTotal = selectedDateBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                    val incomeTotal = selectedDateBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                    val expenseTotal =
+                        selectedDateBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                    val incomeTotal =
+                        selectedDateBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
                     val dateStr = "${animatedDate?.monthValue}月${animatedDate?.dayOfMonth}日"
 
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -215,6 +220,9 @@ fun CalendarPage(
                                             viewModel.insertAndReturnId(billToDelete)
                                         }
                                     }
+                                },
+                                onItemClick = { clickedBill ->
+                                    backStack.add(UIRoute.BillDetail(clickedBill))
                                 }
                             )
                         }

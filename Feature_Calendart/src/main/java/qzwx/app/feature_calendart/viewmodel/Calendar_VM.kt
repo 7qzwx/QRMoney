@@ -1,9 +1,8 @@
-package qzwx.app.feature_calendart.screen
+package qzwx.app.feature_calendart.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -12,14 +11,14 @@ import qzwx.app.module_data.entity.QBillEntity
 import javax.inject.Inject
 
 @HiltViewModel
-class CalendarViewModel @Inject constructor(
+class Calendar_VM @Inject constructor(
     private val billDao: QBillDao
 ) : ViewModel() {
 
     val bills: StateFlow<List<QBillEntity>> = billDao.getAllBills()
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Companion.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
@@ -31,4 +30,3 @@ class CalendarViewModel @Inject constructor(
         return billDao.insertBill(bill)
     }
 }
-

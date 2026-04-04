@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
-
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -67,4 +68,14 @@ dependencies {
 
     //实体类依赖
     api(project(":Module_Data"))
+
+    //nav3
+    api(libs.androidx.navigation3.ui)
+    api(libs.androidx.navigation3.runtime)
+    api(libs.androidx.lifecycle.viewmodel.navigation3)
+    api(libs.androidx.material3.adaptive.navigation3)
+    api(libs.kotlinx.serialization.core)
+    //hilt
+    implementation("com.google.dagger:hilt-android:2.59.2")
+    ksp("com.google.dagger:hilt-compiler:2.59.2")
 }
