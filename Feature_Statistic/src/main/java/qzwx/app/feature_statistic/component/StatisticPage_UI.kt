@@ -1,11 +1,7 @@
 package qzwx.app.feature_statistic.component
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -106,10 +102,22 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
             ) {
-                val expenseBgColor by animateColorAsState(if (isExpense) primaryColor else surfaceColor, label = "ExpenseBg")
-                val expenseTextColor by animateColorAsState(if (isExpense) MaterialTheme.colorScheme.onPrimary else primaryColor, label = "ExpenseText")
-                val incomeBgColor by animateColorAsState(if (!isExpense) primaryColor else surfaceColor, label = "IncomeBg")
-                val incomeTextColor by animateColorAsState(if (!isExpense) MaterialTheme.colorScheme.onPrimary else primaryColor, label = "IncomeText")
+                val expenseBgColor by animateColorAsState(
+                    if (isExpense) primaryColor else surfaceColor,
+                    label = "ExpenseBg"
+                )
+                val expenseTextColor by animateColorAsState(
+                    if (isExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                    label = "ExpenseText"
+                )
+                val incomeBgColor by animateColorAsState(
+                    if (!isExpense) primaryColor else surfaceColor,
+                    label = "IncomeBg"
+                )
+                val incomeTextColor by animateColorAsState(
+                    if (!isExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                    label = "IncomeText"
+                )
 
                 Box(
                     modifier = Modifier
@@ -157,7 +165,8 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                 if (targetIsLast7Days) {
                     (6 downTo 0).map { LocalDate.now().minusDays(it.toLong()) }
                 } else {
-                    val monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    val monday =
+                        LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                     (0..6).map { monday.plusDays(it.toLong()) }
                 }
             }
@@ -166,18 +175,23 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                 val typeToFilter = if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
                 val aggregatedData = allBills
                     .filter { it.type == typeToFilter }
-                    .groupBy { Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate() }
+                    .groupBy {
+                        Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                    }
                     .mapValues { (_, bills) -> bills.sumOf { it.amount } }
 
                 localDates.map { date ->
-                    val label = if (targetIsLast7Days && date == LocalDate.now()) "今天" else date.dayOfWeek.toChinese()
+                    val label =
+                        if (targetIsLast7Days && date == LocalDate.now()) "今天" else date.dayOfWeek.toChinese()
                     val value = aggregatedData[date] ?: 0.0
                     ChartData(label, value)
                 }
             }
 
             val localTotal = localChartData.sumOf { it.value }
-            val localAvg = if (localChartData.isNotEmpty()) localTotal / localChartData.size else 0.0
+            val localAvg =
+                if (localChartData.isNotEmpty()) localTotal / localChartData.size else 0.0
             val localMaxValue = localChartData.maxOfOrNull { it.value }?.takeIf { it > 0 } ?: 1.0
 
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -203,7 +217,10 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
                             val animatedFraction by animateFloatAsState(
                                 targetValue = targetFraction,
-                                animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+                                animationSpec = tween(
+                                    durationMillis = 800,
+                                    easing = FastOutSlowInEasing
+                                ),
                                 label = "BarAnimation"
                             )
 
@@ -231,7 +248,10 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                             .fillMaxHeight(animatedFraction)
                                             .background(
                                                 color = if (targetIsExpense) errorColor else primaryColor,
-                                                shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                                                shape = RoundedCornerShape(
+                                                    topStart = 6.dp,
+                                                    topEnd = 6.dp
+                                                )
                                             )
                                     )
                                 } else {
@@ -251,7 +271,10 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         localChartData.forEach { data ->
-                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Text(text = data.label, fontSize = 12.sp, color = Color.Gray)
                             }
                         }
@@ -395,80 +418,14 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Summary Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = primaryContainer)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "月支出",
-                                color = onPrimaryContainer.copy(alpha = 0.8f),
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = String.format(
-                                    Locale.getDefault(),
-                                    "%.2f",
-                                    monthlyState.monthExpense
-                                ),
-                                color = onPrimaryContainer,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "月收入",
-                                color = onPrimaryContainer.copy(alpha = 0.8f),
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = String.format(
-                                    Locale.getDefault(),
-                                    "%.2f",
-                                    monthlyState.monthIncome
-                                ),
-                                color = onPrimaryContainer,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "月结余",
-                                color = onPrimaryContainer.copy(alpha = 0.8f),
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = String.format(
-                                    Locale.getDefault(),
-                                    "%.2f",
-                                    monthlyState.monthBalance
-                                ),
-                                color = onPrimaryContainer,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
+            qzwx.app.module_ui.components.Shared_SummaryCard(
+                expenseLabel = "月支出",
+                expenseAmount = monthlyState.monthExpense,
+                incomeLabel = "月收入",
+                incomeAmount = monthlyState.monthIncome,
+                balanceLabel = "月结余",
+                balanceAmount = monthlyState.monthBalance
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -601,10 +558,22 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                         .clip(RoundedCornerShape(8.dp))
                         .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
                 ) {
-                    val pieExpenseBgColor by animateColorAsState(if (isPieChartExpense) primaryColor else surfaceColor, label = "PieExpenseBg")
-                    val pieExpenseTextColor by animateColorAsState(if (isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor, label = "PieExpenseText")
-                    val pieIncomeBgColor by animateColorAsState(if (!isPieChartExpense) primaryColor else surfaceColor, label = "PieIncomeBg")
-                    val pieIncomeTextColor by animateColorAsState(if (!isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor, label = "PieIncomeText")
+                    val pieExpenseBgColor by animateColorAsState(
+                        if (isPieChartExpense) primaryColor else surfaceColor,
+                        label = "PieExpenseBg"
+                    )
+                    val pieExpenseTextColor by animateColorAsState(
+                        if (isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "PieExpenseText"
+                    )
+                    val pieIncomeBgColor by animateColorAsState(
+                        if (!isPieChartExpense) primaryColor else surfaceColor,
+                        label = "PieIncomeBg"
+                    )
+                    val pieIncomeTextColor by animateColorAsState(
+                        if (!isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "PieIncomeText"
+                    )
 
                     Box(
                         modifier = Modifier
@@ -640,7 +609,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
             AnimatedContent(
                 targetState = isPieChartExpense,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            400
+                        )
+                    )
                 },
                 label = "PieChartContentAnim"
             ) { targetIsPieChartExpense ->
@@ -782,7 +755,7 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                             contentDescription = cat.name,
                                             tint = colors[index % colors.size],
                                             modifier = Modifier.size(32.dp)
-                                )
+                                        )
                                     } else {
                                         Box(
                                             modifier = Modifier
@@ -850,6 +823,102 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
+    val allBills by viewModel.allBills.collectAsState(initial = emptyList())
+
+    var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
+    val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
+
+    val yearsList = remember {
+        (0..19).map { LocalDate.now().year - it }
+    }
+
+    val yearlyBills = remember(allBills, selectedYear) {
+        allBills.filter { bill ->
+            val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+            date.year == selectedYear
+        }
+    }
+
+    val yearExpense = remember(yearlyBills) {
+        yearlyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+    }
+    val yearIncome = remember(yearlyBills) {
+        yearlyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+    }
+    val yearBalance = yearIncome - yearExpense
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(surfaceColor)
+            .padding(vertical = 16.dp)
+    ) {
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    itemsIndexed(yearsList) { _, year ->
+                        val isSelected = selectedYear == year
+                        val currentYear = LocalDate.now().year
+                        val titleStr = when (year) {
+                            currentYear -> "今年"
+                            currentYear - 1 -> "去年"
+                            else -> "${year}年"
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isSelected) primaryColor else surfaceColor)
+                                .clickable {
+                                    selectedYear = year
+                                }
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) primaryColor else Color.LightGray,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = titleStr,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.Gray,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Summary Card
+            qzwx.app.module_ui.components.Shared_SummaryCard(
+                expenseLabel = "年支出",
+                expenseAmount = yearExpense,
+                incomeLabel = "年收入",
+                incomeAmount = yearIncome,
+                balanceLabel = "年结余",
+                balanceAmount = yearBalance
+            )
         }
     }
 }

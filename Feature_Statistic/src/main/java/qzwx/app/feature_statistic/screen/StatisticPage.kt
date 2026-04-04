@@ -87,6 +87,8 @@ fun StatisticPage() {
                     qzwx.app.feature_statistic.component.DailyStatisticView()
                 } else if (page == 1) {
                     qzwx.app.feature_statistic.component.MonthlyStatisticView()
+                } else if (page == 2) {
+                    qzwx.app.feature_statistic.component.YearlyStatisticView()
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = "${tabs[page]} 页面内容待添加")
