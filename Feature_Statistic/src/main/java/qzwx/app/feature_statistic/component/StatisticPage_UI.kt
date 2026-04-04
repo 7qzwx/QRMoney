@@ -1,13 +1,17 @@
-package qzwx.app.feature_statistic.component
+﻿package qzwx.app.feature_statistic.component
 
+import android.R.attr.scaleX
+import android.R.attr.scaleY
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +54,33 @@ fun DayOfWeek.toChinese(): String = when (this) {
     DayOfWeek.FRIDAY -> "周五"
     DayOfWeek.SATURDAY -> "周六"
     DayOfWeek.SUNDAY -> "周日"
+}
+
+@Composable
+fun ChartLegend(expenseColor: Color = Color(0xFFF44336), incomeColor: Color = Color(0xFF4CAF50)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(expenseColor, RoundedCornerShape(50))
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("支出", fontSize = 12.sp, color = Color.Gray)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(incomeColor, RoundedCornerShape(50))
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("收入", fontSize = 12.sp, color = Color.Gray)
+        }
+    }
 }
 
 @Composable
@@ -417,409 +450,419 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Summary Card
-            qzwx.app.module_ui.components.Shared_SummaryCard(
-                expenseLabel = "月支出",
-                expenseAmount = monthlyState.monthExpense,
-                incomeLabel = "月收入",
-                incomeAmount = monthlyState.monthIncome,
-                balanceLabel = "月结余",
-                balanceAmount = monthlyState.monthBalance
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Chart Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "收支统计", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Chart
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .padding(horizontal = 16.dp)
-            ) {
-                if (monthlyState.isReady && monthlyState.barDataList.isNotEmpty()) {
-                    ColumnChart(
-                        animationDelay = 5,
-                        modifier = Modifier.fillMaxSize(),
-                        data = monthlyState.barDataList,
-                        barProperties = BarProperties(
-                            spacing = 2.dp,
-                            cornerRadius = Bars.Data.Radius.Rectangle(
-                                topRight = 4.dp,
-                                topLeft = 4.dp
-                            ),
-                            thickness = 4.dp
-                        ),
-                        labelProperties = LabelProperties(
-                            enabled = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp),
-                            rotation = LabelProperties.Rotation(
-                                degree = 0f
-                            )
-                        ),
-                        indicatorProperties = HorizontalIndicatorProperties(
-                            enabled = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                        ),
-                        gridProperties = GridProperties(
-                            xAxisProperties = GridProperties.AxisProperties(enabled = false),
-                            yAxisProperties = GridProperties.AxisProperties(
-                                enabled = true, color = SolidColor(
-                                    Color.LightGray.copy(alpha = 0.5f)
-                                )
-                            )
-                        ),
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Line Chart Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "收支趋势", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Line Chart
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .padding(horizontal = 16.dp)
-            ) {
-                if (monthlyState.isReady && monthlyState.theLineChartData.isNotEmpty()) {
-                    LineChart(
-                        modifier = Modifier.fillMaxSize(),
-                        data = monthlyState.theLineChartData,
-                        labelProperties = LabelProperties(
-                            rotation = LabelProperties.Rotation(
-                                degree = 0f
-                            ),
-                            enabled = true,
-                            labels = (1..selectedDate.lengthOfMonth()).map { if (it % 2 != 0) it.toString() else " " },
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                        ),
-                        indicatorProperties = HorizontalIndicatorProperties(
-                            enabled = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
-                        ),
-                        gridProperties = GridProperties(
-                            xAxisProperties = GridProperties.AxisProperties(enabled = false),
-                            yAxisProperties = GridProperties.AxisProperties(
-                                enabled = true, color = SolidColor(
-                                    Color.LightGray.copy(alpha = 0.5f)
-                                )
-                            )
-                        ),
-                        curvedEdges = false
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Pie Chart Section Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "分类占比", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-
-                // Toggle for Pie Chart
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
-                ) {
-                    val pieExpenseBgColor by animateColorAsState(
-                        if (isPieChartExpense) primaryColor else surfaceColor,
-                        label = "PieExpenseBg"
-                    )
-                    val pieExpenseTextColor by animateColorAsState(
-                        if (isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                        label = "PieExpenseText"
-                    )
-                    val pieIncomeBgColor by animateColorAsState(
-                        if (!isPieChartExpense) primaryColor else surfaceColor,
-                        label = "PieIncomeBg"
-                    )
-                    val pieIncomeTextColor by animateColorAsState(
-                        if (!isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                        label = "PieIncomeText"
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .background(pieExpenseBgColor)
-                            .clickable { isPieChartExpense = true }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "支出",
-                            color = pieExpenseTextColor,
-                            fontWeight = if (isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .background(pieIncomeBgColor)
-                            .clickable { isPieChartExpense = false }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "收入",
-                            color = pieIncomeTextColor,
-                            fontWeight = if (!isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             AnimatedContent(
-                targetState = isPieChartExpense,
+                targetState = selectedDate,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
-                        animationSpec = tween(
-                            400
-                        )
-                    )
+                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
                 },
-                label = "PieChartContentAnim"
-            ) { targetIsPieChartExpense ->
+                label = "MonthlyContentAnim"
+            ) { targetDate ->
+                Column {
+                    // Summary Card
+                    qzwx.app.module_ui.components.Shared_SummaryCard(
+                        expenseLabel = "月支出",
+                        expenseAmount = monthlyState.monthExpense, // Note: these are derived from state based on selected month
+                        incomeLabel = "月收入",
+                        incomeAmount = monthlyState.monthIncome,
+                        balanceLabel = "月结余",
+                        balanceAmount = monthlyState.monthBalance
+                    )
 
-                // Pie Chart Content
-                val pieBills = allBills.filter { bill ->
-                    val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-                    date.year == selectedDate.year && date.month == selectedDate.month &&
-                            bill.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
-                }
-                val totalPieAmount = pieBills.sumOf { it.amount }
-                val categoryGroups =
-                    pieBills.groupBy { it.category }.mapValues { it.value.sumOf { b -> b.amount } }
-                        .toList().sortedByDescending { it.second }
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Reset selected category if there's no matching group
-                LaunchedEffect(categoryGroups) {
-                    if (selectedPieCategory != null && categoryGroups.find { it.first == selectedPieCategory } == null) {
-                        selectedPieCategory = null
+                    // Chart Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "收支统计", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        ChartLegend()
                     }
-                }
 
-                val colors = listOf(
-                    Color(0xFFF44336),
-                    Color(0xFF2196F3),
-                    Color(0xFFFF9800),
-                    Color(0xFF4CAF50),
-                    Color(0xFF9C27B0),
-                    Color(0xFF00BCD4),
-                    Color(0xFFFFEB3B),
-                    Color(0xFF795548)
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(180.dp)
-                            ) {
-                                PieChart(
-                                    onPieClick = { pie ->
-                                        selectedPieCategory =
-                                            if (selectedPieCategory == pie.label) null else pie.label
-                                    },
-                                    modifier = Modifier.fillMaxSize(),
-                                    selectedPaddingDegree = 4f,
-                                    labelHelperProperties = LabelHelperProperties(enabled = false),
-                                    selectedScale = 1.2f,
-                                    data = categoryGroups.mapIndexed { index, pair ->
-                                        Pie(
-                                            label = pair.first,
-                                            data = pair.second,
-                                            color = colors[index % colors.size],
-                                            selectedColor = colors[index % colors.size].copy(alpha = 0.5f),
-                                            selected = pair.first == selectedPieCategory
-                                        )
-                                    },
-                                    style = Pie.Style.Fill
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                categoryGroups.forEachIndexed { index, pair ->
-                                    val percent = (pair.second / totalPieAmount) * 100
-                                    val isPieSelected = pair.first == selectedPieCategory
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .padding(vertical = 4.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (isPieSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                                            .clickable {
-                                                selectedPieCategory =
-                                                    if (isPieSelected) null else pair.first
-                                            }
-                                            .padding(all = if (isPieSelected) 4.dp else 2.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(10.dp)
-                                                .background(
-                                                    colors[index % colors.size],
-                                                    RoundedCornerShape(50)
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "${pair.first} (${
-                                                String.format(
-                                                    Locale.getDefault(),
-                                                    "%.1f",
-                                                    percent
-                                                )
-                                            }%, ¥${
-                                                String.format(
-                                                    Locale.getDefault(),
-                                                    "%.1f",
-                                                    pair.second
-                                                )
-                                            })",
-                                            fontSize = 12.sp,
-                                            fontWeight = if (isPieSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            categoryGroups.forEachIndexed { index, pair ->
-                                val percent = (pair.second / totalPieAmount) * 100
-                                val cat = billCategoryList.find { it.name == pair.first }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (cat != null) {
-                                        Icon(
-                                            imageVector = cat.icon,
-                                            contentDescription = cat.name,
-                                            tint = colors[index % colors.size],
-                                            modifier = Modifier.size(32.dp)
-                                        )
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .background(
-                                                    colors[index % colors.size],
-                                                    RoundedCornerShape(50)
-                                                )
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(
-                                                text = pair.first,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                text = "¥${
-                                                    String.format(
-                                                        Locale.getDefault(),
-                                                        "%.2f",
-                                                        pair.second
-                                                    )
-                                                }", fontSize = 14.sp, fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        LinearProgressIndicator(
-                                            progress = { (percent / 100).toFloat() },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(8.dp)
-                                                .clip(RoundedCornerShape(4.dp)),
-                                            color = colors[index % colors.size],
-                                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "${
-                                                String.format(
-                                                    Locale.getDefault(),
-                                                    "%.1f",
-                                                    percent
-                                                )
-                                            }%", fontSize = 12.sp, color = Color.Gray
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
+                    // Chart
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
+                            .height(260.dp)
+                            .padding(horizontal = 16.dp)
                     ) {
-                        Text(text = "暂无数据", color = Color.Gray)
+                        if (monthlyState.isReady && monthlyState.barDataList.isNotEmpty()) {
+                            ColumnChart(
+                                animationDelay = 5,
+                                modifier = Modifier.fillMaxSize(),
+                                data = monthlyState.barDataList,
+                                barProperties = BarProperties(
+                                    spacing = 2.dp,
+                                    cornerRadius = Bars.Data.Radius.Rectangle(
+                                        topRight = 4.dp,
+                                        topLeft = 4.dp
+                                    ),
+                                    thickness = 4.dp
+                                ),
+                                labelProperties = LabelProperties(
+                                    enabled = true,
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp),
+                                    rotation = LabelProperties.Rotation(
+                                        degree = 0f
+                                    )
+                                ),
+                                indicatorProperties = HorizontalIndicatorProperties(
+                                    enabled = false,
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
+                                ),
+                                gridProperties = GridProperties(
+                                    xAxisProperties = GridProperties.AxisProperties(enabled = false),
+                                    yAxisProperties = GridProperties.AxisProperties(
+                                        enabled = true, color = SolidColor(
+                                            Color.LightGray.copy(alpha = 0.5f)
+                                        )
+                                    )
+                                ),
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Line Chart Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "收支趋势", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        ChartLegend()
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Line Chart
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        if (monthlyState.isReady && monthlyState.theLineChartData.isNotEmpty()) {
+                            LineChart(
+                                modifier = Modifier.fillMaxSize(),
+                                data = monthlyState.theLineChartData,
+                                labelProperties = LabelProperties(
+                                    rotation = LabelProperties.Rotation(
+                                        degree = 0f
+                                    ),
+                                    enabled = true,
+                                    labels = (1..selectedDate.lengthOfMonth()).map { if (it % 2 != 0) it.toString() else " " },
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
+                                ),
+                                indicatorProperties = HorizontalIndicatorProperties(
+                                    enabled = false,
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 9.sp)
+                                ),
+                                gridProperties = GridProperties(
+                                    xAxisProperties = GridProperties.AxisProperties(enabled = false),
+                                    yAxisProperties = GridProperties.AxisProperties(
+                                        enabled = true, color = SolidColor(
+                                            Color.LightGray.copy(alpha = 0.5f)
+                                        )
+                                    )
+                                ),
+                                curvedEdges = false
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Pie Chart Section Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "分类占比", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+                        // Toggle for Pie Chart
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
+                        ) {
+                            val pieExpenseBgColor by animateColorAsState(
+                                if (isPieChartExpense) primaryColor else surfaceColor,
+                                label = "PieExpenseBg"
+                            )
+                            val pieExpenseTextColor by animateColorAsState(
+                                if (isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "PieExpenseText"
+                            )
+                            val pieIncomeBgColor by animateColorAsState(
+                                if (!isPieChartExpense) primaryColor else surfaceColor,
+                                label = "PieIncomeBg"
+                            )
+                            val pieIncomeTextColor by animateColorAsState(
+                                if (!isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "PieIncomeText"
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .background(pieExpenseBgColor)
+                                    .clickable { isPieChartExpense = true }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "支出",
+                                    color = pieExpenseTextColor,
+                                    fontWeight = if (isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(pieIncomeBgColor)
+                                    .clickable { isPieChartExpense = false }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "收入",
+                                    color = pieIncomeTextColor,
+                                    fontWeight = if (!isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AnimatedContent(
+                        targetState = Pair(isPieChartExpense, targetDate),
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                                animationSpec = tween(400)
+                            )
+                        },
+                        label = "PieChartContentAnim"
+                    ) { (targetIsPieChartExpense, targetMonth) ->
+
+                        // Pie Chart Content
+                        val pieBills = allBills.filter { bill ->
+                            val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            date.year == targetMonth.year && date.month == targetMonth.month &&
+                                    bill.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
+                        }
+                        val totalPieAmount = pieBills.sumOf { it.amount }
+                        val categoryGroups =
+                            pieBills.groupBy { it.category }.mapValues { it.value.sumOf { b -> b.amount } }
+                                .toList().sortedByDescending { it.second }
+
+                        // Reset selected category if there's no matching group
+                        LaunchedEffect(categoryGroups) {
+                            if (selectedPieCategory != null && categoryGroups.find { it.first == selectedPieCategory } == null) {
+                                selectedPieCategory = null
+                            }
+                        }
+
+                        val colors = listOf(
+                            Color(0xFFF44336),
+                            Color(0xFF2196F3),
+                            Color(0xFFFF9800),
+                            Color(0xFF4CAF50),
+                            Color(0xFF9C27B0),
+                            Color(0xFF00BCD4),
+                            Color(0xFFFFEB3B),
+                            Color(0xFF795548)
+                        )
+
+                        if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(180.dp)
+                                    ) {
+                                        PieChart(
+                                            onPieClick = { pie ->
+                                                selectedPieCategory =
+                                                    if (selectedPieCategory == pie.label) null else pie.label
+                                            },
+                                            modifier = Modifier.fillMaxSize(),
+                                            selectedPaddingDegree = 4f,
+                                            labelHelperProperties = LabelHelperProperties(enabled = false),
+                                            selectedScale = 1.2f,
+                                            data = categoryGroups.mapIndexed { index, pair ->
+                                                Pie(
+                                                    label = pair.first,
+                                                    data = pair.second,
+                                                    color = colors[index % colors.size],
+                                                    selectedColor = colors[index % colors.size].copy(alpha = 0.5f),
+                                                    selected = pair.first == selectedPieCategory
+                                                )
+                                            },
+                                            style = Pie.Style.Fill
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        categoryGroups.forEachIndexed { index, pair ->
+                                            val percent = (pair.second / totalPieAmount) * 100
+                                            val isPieSelected = pair.first == selectedPieCategory
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .padding(vertical = 4.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (isPieSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                                    .clickable {
+                                                        selectedPieCategory =
+                                                            if (isPieSelected) null else pair.first
+                                                    }
+                                                    .padding(all = if (isPieSelected) 4.dp else 2.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(10.dp)
+                                                        .background(
+                                                            colors[index % colors.size],
+                                                            RoundedCornerShape(50)
+                                                        )
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = "${pair.first} (${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            percent
+                                                        )
+                                                    }%, ¥${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            pair.second
+                                                        )
+                                                    })",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = if (isPieSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                ) {
+                                    categoryGroups.forEachIndexed { index, pair ->
+                                        val percent = (pair.second / totalPieAmount) * 100
+                                        val cat = billCategoryList.find { it.name == pair.first }
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (cat != null) {
+                                                Icon(
+                                                    imageVector = cat.icon,
+                                                    contentDescription = cat.name,
+                                                    tint = colors[index % colors.size],
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(32.dp)
+                                                        .background(
+                                                            colors[index % colors.size],
+                                                            RoundedCornerShape(50)
+                                                        )
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(16.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = pair.first,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Text(
+                                                        text = "¥${
+                                                            String.format(
+                                                                Locale.getDefault(),
+                                                                "%.2f",
+                                                                pair.second
+                                                            )
+                                                        }", fontSize = 14.sp, fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                LinearProgressIndicator(
+                                                    progress = { (percent / 100).toFloat() },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(8.dp)
+                                                        .clip(RoundedCornerShape(4.dp)),
+                                                    color = colors[index % colors.size],
+                                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            percent
+                                                        )
+                                                    }%", fontSize = 12.sp, color = Color.Gray
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "暂无数据", color = Color.Gray)
+                            }
+                        }
                     }
                 }
             }
@@ -833,6 +876,8 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
     var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
     var isHeatmapExpense by remember { mutableStateOf(true) }
+    var isYearlyPieChartExpense by remember { mutableStateOf(true) }
+    var selectedYearlyPieCategory by remember { mutableStateOf<String?>(null) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -912,170 +957,607 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Summary Card
-            qzwx.app.module_ui.components.Shared_SummaryCard(
-                expenseLabel = "年支出",
-                expenseAmount = yearExpense,
-                incomeLabel = "年收入",
-                incomeAmount = yearIncome,
-                balanceLabel = "年结余",
-                balanceAmount = yearBalance
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Heatmap Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = "收支热力", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
-                ) {
-                    val heatExpenseBgColor by animateColorAsState(
-                        if (isHeatmapExpense) primaryColor else surfaceColor,
-                        label = "HeatExpenseBg"
-                    )
-                    val heatExpenseTextColor by animateColorAsState(
-                        if (isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                        label = "HeatExpenseText"
-                    )
-                    val heatIncomeBgColor by animateColorAsState(
-                        if (!isHeatmapExpense) primaryColor else surfaceColor,
-                        label = "HeatIncomeBg"
-                    )
-                    val heatIncomeTextColor by animateColorAsState(
-                        if (!isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                        label = "HeatIncomeText"
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .background(heatExpenseBgColor)
-                            .clickable { isHeatmapExpense = true }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "支出",
-                            color = heatExpenseTextColor,
-                            fontWeight = if (isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .background(heatIncomeBgColor)
-                            .clickable { isHeatmapExpense = false }
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "收入",
-                            color = heatIncomeTextColor,
-                            fontWeight = if (!isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Heatmap Grid
             AnimatedContent(
-                targetState = isHeatmapExpense,
+                targetState = selectedYear,
                 transitionSpec = {
                     fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
                 },
-                label = "HeatmapContentAnim"
-            ) { targetIsExpense ->
-                val typeToFilter = if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
-                val activeColor = if (targetIsExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
-                val inactiveColor = Color(0xFFEEEEEE)
+                label = "YearlyContentAnim"
+            ) { targetYear ->
 
-                val heatBills = yearlyBills.filter { it.type == typeToFilter }
-                val billDates = heatBills.map {
-                    Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
-                }.toSet()
+                val targetYearlyBills = allBills.filter { bill ->
+                    val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                    date.year == targetYear
+                }
+                val targetYearExpense = targetYearlyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                val targetYearIncome = targetYearlyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                val targetYearBalance = targetYearIncome - targetYearExpense
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    for (row in 0 until 3) {
+                Column {
+                    // Summary Card
+                    qzwx.app.module_ui.components.Shared_SummaryCard(
+                        expenseLabel = "年支出",
+                        expenseAmount = targetYearExpense,
+                        incomeLabel = "年收入",
+                        incomeAmount = targetYearIncome,
+                        balanceLabel = "年结余",
+                        balanceAmount = targetYearBalance
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Heatmap Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "收支热力", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
                         ) {
-                            for (col in 0 until 4) {
-                                val monthIndex = row * 4 + col + 1
-                                val isLeap = java.time.Year.isLeap(selectedYear.toLong())
-                                val daysInMonth = java.time.Month.of(monthIndex).length(isLeap)
-                                val firstDateOfMonth = LocalDate.of(selectedYear, monthIndex, 1)
-                                val firstDayOfWeek = firstDateOfMonth.dayOfWeek.value // 1 (Mon) - 7 (Sun)
+                            val heatExpenseBgColor by animateColorAsState(
+                                if (isHeatmapExpense) primaryColor else surfaceColor,
+                                label = "HeatExpenseBg"
+                            )
+                            val heatExpenseTextColor by animateColorAsState(
+                                if (isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "HeatExpenseText"
+                            )
+                            val heatIncomeBgColor by animateColorAsState(
+                                if (!isHeatmapExpense) primaryColor else surfaceColor,
+                                label = "HeatIncomeBg"
+                            )
+                            val heatIncomeTextColor by animateColorAsState(
+                                if (!isHeatmapExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "HeatIncomeText"
+                            )
 
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.Start
+                            Box(
+                                modifier = Modifier
+                                    .background(heatExpenseBgColor)
+                                    .clickable { isHeatmapExpense = true }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "支出",
+                                    color = heatExpenseTextColor,
+                                    fontWeight = if (isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(heatIncomeBgColor)
+                                    .clickable { isHeatmapExpense = false }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "收入",
+                                    color = heatIncomeTextColor,
+                                    fontWeight = if (!isHeatmapExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Heatmap Grid
+                    AnimatedContent(
+                        targetState = isHeatmapExpense,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                        },
+                        label = "HeatmapContentAnim"
+                    ) { targetIsExpense ->
+                        val typeToFilter = if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
+                        val activeColor = if (targetIsExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
+                        val inactiveColor = Color(0xFFEEEEEE)
+
+                        val heatBills = targetYearlyBills.filter { it.type == typeToFilter }
+                        val billDates = heatBills.map {
+                            Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                        }.toSet()
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            for (row in 0 until 3) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Text(
-                                        text = "${monthIndex}月",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(bottom = 6.dp, start = 2.dp)
-                                    )
-                                    // Draw month mini calendar map
-                                    val weeks = Math.ceil((daysInMonth + firstDayOfWeek - 1) / 7.0).toInt()
-                                    for (w in 0 until 6) { // Draw exactly 6 rows to keep all month grids equal height
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                    for (col in 0 until 4) {
+                                        val monthIndex = row * 4 + col + 1
+                                        val isLeap = java.time.Year.isLeap(targetYear.toLong())
+                                        val daysInMonth = java.time.Month.of(monthIndex).length(isLeap)
+                                        val firstDateOfMonth = LocalDate.of(targetYear, monthIndex, 1)
+                                        val firstDayOfWeek = firstDateOfMonth.dayOfWeek.value // 1 (Mon) - 7 (Sun)
+
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            horizontalAlignment = Alignment.Start
                                         ) {
-                                            for (d in 1..7) {
-                                                val dayIndex = w * 7 + d
-                                                val dateDay = dayIndex - firstDayOfWeek + 1
-                                                if (dateDay in 1..daysInMonth) {
-                                                    val currentDate = LocalDate.of(selectedYear, monthIndex, dateDay)
-                                                    val cellColor = if (billDates.contains(currentDate)) activeColor else inactiveColor
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .aspectRatio(1f)
-                                                            .padding(1.dp)
-                                                            .clip(RoundedCornerShape(50))
-                                                            .background(cellColor)
-                                                    )
-                                                } else {
-                                                    // Empty cell space maintaining proportion
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .aspectRatio(1f)
-                                                            .padding(1.dp)
-                                                    )
+                                            Text(
+                                                text = "${monthIndex}月",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(bottom = 6.dp, start = 2.dp)
+                                            )
+                                            // Draw month mini calendar map
+                                            val weeks = Math.ceil((daysInMonth + firstDayOfWeek - 1) / 7.0).toInt()
+                                            for (w in 0 until 6) { // Draw exactly 6 rows to keep all month grids equal height
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    for (d in 1..7) {
+                                                        val dayIndex = w * 7 + d
+                                                        val dateDay = dayIndex - firstDayOfWeek + 1
+                                                        if (dateDay in 1..daysInMonth) {
+                                                            val currentDate = LocalDate.of(targetYear, monthIndex, dateDay)
+                                                            val cellColor = if (billDates.contains(currentDate)) activeColor else inactiveColor
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .weight(1f)
+                                                                    .aspectRatio(1f)
+                                                                    .padding(1.dp)
+                                                                    .clip(RoundedCornerShape(50))
+                                                                    .background(cellColor)
+                                                            )
+                                                        } else {
+                                                            // Empty cell space maintaining proportion
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .weight(1f)
+                                                                    .aspectRatio(1f)
+                                                                    .padding(1.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                if (row < 2) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                             }
                         }
-                        if (row < 2) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Pie Chart Section Header for Yearly
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "分类占比", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+                        // Toggle for Pie Chart
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
+                        ) {
+                            val pieExpenseBgColor by animateColorAsState(
+                                if (isYearlyPieChartExpense) primaryColor else surfaceColor,
+                                label = "PieExpenseBg"
+                            )
+                            val pieExpenseTextColor by animateColorAsState(
+                                if (isYearlyPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "PieExpenseText"
+                            )
+                            val pieIncomeBgColor by animateColorAsState(
+                                if (!isYearlyPieChartExpense) primaryColor else surfaceColor,
+                                label = "PieIncomeBg"
+                            )
+                            val pieIncomeTextColor by animateColorAsState(
+                                if (!isYearlyPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                                label = "PieIncomeText"
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .background(pieExpenseBgColor)
+                                    .clickable { isYearlyPieChartExpense = true }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "支出",
+                                    color = pieExpenseTextColor,
+                                    fontWeight = if (isYearlyPieChartExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(pieIncomeBgColor)
+                                    .clickable { isYearlyPieChartExpense = false }
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "收入",
+                                    color = pieIncomeTextColor,
+                                    fontWeight = if (!isYearlyPieChartExpense) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AnimatedContent(
+                        targetState = Pair(isYearlyPieChartExpense, targetYear),
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                                animationSpec = tween(400)
+                            )
+                        },
+                        label = "YearlyPieChartContentAnim"
+                    ) { (targetIsPieChartExpense, year) ->
+                        val pieBills = allBills.filter { bill ->
+                            val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            date.year == year &&
+                                    bill.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
+                        }
+                        val totalPieAmount = pieBills.sumOf { it.amount }
+                        val categoryGroups =
+                            pieBills.groupBy { it.category }.mapValues { it.value.sumOf { b -> b.amount } }
+                                .toList().sortedByDescending { it.second }
+
+                        LaunchedEffect(categoryGroups) {
+                            if (selectedYearlyPieCategory != null && categoryGroups.find { it.first == selectedYearlyPieCategory } == null) {
+                                selectedYearlyPieCategory = null
+                            }
+                        }
+
+                        val colors = listOf(
+                            Color(0xFFF44336),
+                            Color(0xFF2196F3),
+                            Color(0xFFFF9800),
+                            Color(0xFF4CAF50),
+                            Color(0xFF9C27B0),
+                            Color(0xFF00BCD4),
+                            Color(0xFFFFEB3B),
+                            Color(0xFF795548)
+                        )
+
+                        if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(180.dp)
+                                    ) {
+                                        PieChart(
+                                            onPieClick = { pie ->
+                                                selectedYearlyPieCategory =
+                                                    if (selectedYearlyPieCategory == pie.label) null else pie.label
+                                            },
+                                            modifier = Modifier.fillMaxSize(),
+                                            selectedPaddingDegree = 4f,
+                                            labelHelperProperties = LabelHelperProperties(enabled = false),
+                                            selectedScale = 1.2f,
+                                            data = categoryGroups.mapIndexed { index, pair ->
+                                                Pie(
+                                                    label = pair.first,
+                                                    data = pair.second,
+                                                    color = colors[index % colors.size],
+                                                    selectedColor = colors[index % colors.size].copy(alpha = 0.5f),
+                                                    selected = pair.first == selectedYearlyPieCategory
+                                                )
+                                            },
+                                            style = Pie.Style.Fill
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        categoryGroups.forEachIndexed { index, pair ->
+                                            val percent = (pair.second / totalPieAmount) * 100
+                                            val isPieSelected = pair.first == selectedYearlyPieCategory
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .padding(vertical = 4.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (isPieSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                                    .clickable {
+                                                        selectedYearlyPieCategory =
+                                                            if (isPieSelected) null else pair.first
+                                                    }
+                                                    .padding(all = if (isPieSelected) 4.dp else 2.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(10.dp)
+                                                        .background(
+                                                            colors[index % colors.size],
+                                                            RoundedCornerShape(50)
+                                                        )
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = "${pair.first} (${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            percent
+                                                        )
+                                                    }%, ¥${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            pair.second
+                                                        )
+                                                    })",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = if (isPieSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                ) {
+                                    categoryGroups.forEachIndexed { index, pair ->
+                                        val percent = (pair.second / totalPieAmount) * 100
+                                        val cat = billCategoryList.find { it.name == pair.first }
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (cat != null) {
+                                                Icon(
+                                                    imageVector = cat.icon,
+                                                    contentDescription = cat.name,
+                                                    tint = colors[index % colors.size],
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(32.dp)
+                                                        .background(
+                                                            colors[index % colors.size],
+                                                            RoundedCornerShape(50)
+                                                        )
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(16.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = pair.first,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Text(
+                                                        text = "¥${
+                                                            String.format(
+                                                                Locale.getDefault(),
+                                                                "%.2f",
+                                                                pair.second
+                                                            )
+                                                        }", fontSize = 14.sp, fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                LinearProgressIndicator(
+                                                    progress = { (percent / 100).toFloat() },
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(8.dp)
+                                                        .clip(RoundedCornerShape(4.dp)),
+                                                    color = colors[index % colors.size],
+                                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.1f",
+                                                            percent
+                                                        )
+                                                    }%", fontSize = 12.sp, color = Color.Gray
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "暂无数据", color = Color.Gray)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Multi-year Bar Chart Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "历年收支", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        ChartLegend()
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val maxAmount = remember(allBills) {
+                        yearsList.maxOfOrNull { year ->
+                            val bills = allBills.filter { Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate().year == year }
+                            val e = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                            val i = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                            maxOf(e, i)
+                        }?.takeIf { it > 0 } ?: 1.0
+                    }
+
+                    var startChartAnimation by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { startChartAnimation = true }
+
+                    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                    val itemWidth = screenWidth / 5
+
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.Bottom,
+                        reverseLayout = true
+                    ) {
+                        items(yearsList) { year ->
+                            val bills = allBills.filter { Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate().year == year }
+                            val expense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                            val income = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+
+                            val expFraction = if (startChartAnimation && expense > 0) (expense / maxAmount).toFloat().coerceAtLeast(0.02f) else 0f
+                            val incFraction = if (startChartAnimation && income > 0) (income / maxAmount).toFloat().coerceAtLeast(0.02f) else 0f
+
+                            val expAnim by animateFloatAsState(
+                                targetValue = expFraction,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                                label = "ExpAnim"
+                            )
+                            val incAnim by animateFloatAsState(
+                                targetValue = incFraction,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                                label = "IncAnim"
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .width(itemWidth)
+                                    .fillMaxHeight(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                ) {
+                                    // Expense Bar
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Bottom,
+                                        modifier = Modifier
+                                            .width(20.dp)
+                                            .fillMaxHeight()
+                                    ) {
+                                        if (expense > 0) {
+                                            Text(
+                                                text = if (expense % 1.0 == 0.0) expense.toInt().toString() else String.format(Locale.getDefault(), "%.1f", expense),
+                                                fontSize = 9.sp,
+                                                color = Color.Gray,
+                                                modifier = Modifier.wrapContentWidth(unbounded = true)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .fillMaxHeight(expAnim)
+                                                .background(Color(0xFFF44336), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                        )
+                                    }
+
+                                    // Income Bar
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Bottom,
+                                        modifier = Modifier
+                                            .width(20.dp)
+                                            .fillMaxHeight()
+                                    ) {
+                                        if (income > 0) {
+                                            Text(
+                                                text = if (income % 1.0 == 0.0) income.toInt().toString() else String.format(Locale.getDefault(), "%.1f", income),
+                                                fontSize = 9.sp,
+                                                color = Color.Gray,
+                                                modifier = Modifier.wrapContentWidth(unbounded = true)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .fillMaxHeight(incAnim)
+                                                .background(Color(0xFF4CAF50), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color.LightGray.copy(alpha = 0.5f))
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "${year}年",
+                                    fontSize = 10.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
