@@ -190,7 +190,7 @@ fun HomePage(
                     val incomeTotal =
                         dailyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
 
-                    Home_BillDayGroup(
+                    qzwx.app.module_ui.components.Shared_BillDayGroup(
                         dateStr = dateStr,
                         dayOfWeekStr = dayOfWeekStr,
                         expenseTotal = expenseTotal,

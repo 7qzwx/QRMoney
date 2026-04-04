@@ -1,90 +1,15 @@
-给你压缩成一版**能直接照着做的总结**👇
+2026年4月4日13:39:41抽取数据类 BillCategoryData 由于 Feature_Home 与 Feature_Calendart
+各自是独立的模块，想要共享底层的样式分类和
+Icon 数据，就把原本位于 Feature_Home 的相关账单分类数据提取到了 Module_UI。
+创建共享 UI 组件 Shared_BillDayGroup 和 Shared_BillItem 参考 HomePage_UI 里面有关展示一日所有账单的整块
+UI，我将其抽离到了公共 UI 库 Module_UI 中的
+components\Shared_BillDayGroup.kt。包含了左滑删除、右滑拉出的编辑功能逻辑外放以及金额加减的统一样式。因为
+Module_UI 需要用到 QBillEntity 等数据结构，所以我也对应在 Module_UI 的 build.gradle.kts 里注册了对
+Module_Data 的 api 依赖。
+重构 HomePage 对旧代码的处理 为了不破坏首页原来的结构，我巧妙地使用代理：在 HomePage_UI 里原本的
+Home_BillItem 与 Home_BillDayGroup 里把内部庞大的长串 Compose 代码删除了，直接分别调用
+Shared_BillItem 与 Shared_BillDayGroup。这样不仅完全解耦出了页面逻辑本身，同时让未来只需维护一套代码。
+日历页面 CalendarPage 底部呈现点击日期的详情 如果您现在点击日历中的某天，它的记录账单能够用
+LazyColumn 动态渲染在日历模块偏下方，这直接复用了刚抽出来的那套
+UI（Shared_BillDayGroup）。如果没有账单，则显示一个"当天没有记录"的反馈占位文本。
 
----
-
-# 🧱 模块职责（一句话版）
-
-### 🟦 `:app`
-
-👉 **启动 + 总导航 + 组装**
-
-* MainActivity
-* NavHost（总路由）
-* Theme入口
-* DI入口
-
----
-
-### 🟩 `:feature:*`
-
-👉 **具体功能实现（页面 + ViewModel）**
-
-* Compose UI
-* ViewModel
-* 子导航
-
-👉 例：
-
-* home（首页）
-* add（记账）
-* stats（统计）
-* settings（设置）
-
----
-
-### 🟨 `:data`
-
-👉 **所有数据来源**
-
-* Room（DB / DAO / Entity）
-* Repository实现
-* 数据转换
-
----
-
-### 🟪 `:core`
-
-👉 **公共能力（建议拆）**
-
-* `core:common` → 工具类、常量
-* `core:ui` → 主题、通用组件
-
----
-
-# 🚦 导航放哪（重点）
-
-👉 **分层放：**
-
-* `app` 👉 总 NavHost
-* `feature` 👉 各自 NavGraph
-
----
-
-# 🧠 架构关系（核心逻辑）
-
-```
-feature → 调用 → repository（接口）
-                ↓
-             data（实现）
-```
-
-👉 feature 不直接碰数据库
-
----
-
-# ⚠️ 四个原则（避免踩坑）
-
-* ❌ app不写业务
-* ❌ feature不碰DAO
-* ❌ core不变垃圾桶
-* ❌ 导航不集中一坨
-
----
-
-# 🎯 一句话记住
-
-👉 **app管路由，feature管页面，data管数据，core管复用**
-
----
-
-如果你下一步卡住了（比如 Nav3 怎么拆 or Room 怎么接 ViewModel），我可以直接帮你搭一版最小可运行模板。

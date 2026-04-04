@@ -11,8 +11,8 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 1,
-      "versionName": "Q记账_property(java.lang.String, map(java.lang.String provider(?) check-type())).apk",
+      "versionCode": 3,
+      "versionName": "1.0.3",
       "outputFile": "app-release.apk"
     }
   ],

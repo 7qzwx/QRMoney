@@ -1,4 +1,4 @@
-package qzwx.app.feature_home
+package qzwx.app.module_ui.data
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*

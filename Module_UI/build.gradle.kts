@@ -17,16 +17,16 @@ android {
         minSdk = 29
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
+//        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro"
+//            )
         }
     }
     compileOptions {
@@ -61,4 +61,10 @@ dependencies {
     api("com.maxkeppeler.sheets-compose-dialogs:clock:1.3.0")
     //自定义左右滑动
     api("me.saket.swipe:swipe:1.3.0")
+    //日历组件
+    api("com.kizitonwose.calendar:view:2.10.1")
+    api("com.kizitonwose.calendar:compose:2.10.1")
+
+    //实体类依赖
+    api(project(":Module_Data"))
 }
