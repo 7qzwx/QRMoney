@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.animation.*
+import qzwx.app.module_ui.components.Shared_MonthYearPickerDialog
 
 @Composable
 fun CalendarPage(
@@ -47,6 +49,7 @@ fun CalendarPage(
     )
 
     val coroutineScope = rememberCoroutineScope()
+    var showMonthPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -57,7 +60,8 @@ fun CalendarPage(
                     coroutineScope.launch {
                         state.animateScrollToMonth(YearMonth.now()) // 日历视图滚动回今天所在的月份
                     }
-                }
+                },
+                onMonthClick = { showMonthPicker = true }
             )
         },
         modifier = modifier
@@ -103,50 +107,71 @@ fun CalendarPage(
             )
 
             // 下方展示选中日期的所有账单记录
-            val selectedDateBills = bills.filter { bill ->
-                val billDate = Instant.ofEpochMilli(bill.createdAt)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
-                selectedDate != null && billDate == selectedDate
-            }
-
-            if (selectedDateBills.isNotEmpty()) {
-                val selectedDayOfWeekStr = when (selectedDate?.dayOfWeek?.value) {
-                    1 -> "星期一"
-                    2 -> "星期二"
-                    3 -> "星期三"
-                    4 -> "星期四"
-                    5 -> "星期五"
-                    6 -> "星期六"
-                    7 -> "星期日"
-                    else -> ""
+            AnimatedContent(
+                targetState = selectedDate,
+                transitionSpec = {
+                    (slideInHorizontally { width -> width / 2 } + fadeIn()).togetherWith(slideOutHorizontally { width -> -width / 2 } + fadeOut())
+                },
+                label = "daily_bills_animation",
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            ) { animatedDate ->
+                val selectedDateBills = bills.filter { bill ->
+                    val billDate = Instant.ofEpochMilli(bill.createdAt)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                    animatedDate != null && billDate == animatedDate
                 }
-                val expenseTotal = selectedDateBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                val incomeTotal = selectedDateBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
-                val dateStr = "${selectedDate?.monthValue}月${selectedDate?.dayOfMonth}日"
 
-                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    item {
-                        Shared_BillDayGroup(
-                            dateStr = dateStr,
-                            dayOfWeekStr = selectedDayOfWeekStr,
-                            expenseTotal = expenseTotal,
-                            incomeTotal = incomeTotal,
-                            bills = selectedDateBills,
-                            onEditBill = { /* TODO: 日历页面的编辑与删除账单联动（或者弹窗）可以之后再处理 */ },
-                            onDeleteBill = { /* TODO: 日历页面的删除 */ }
-                        )
+                if (selectedDateBills.isNotEmpty()) {
+                    val selectedDayOfWeekStr = when (animatedDate?.dayOfWeek?.value) {
+                        1 -> "星期一"
+                        2 -> "星期二"
+                        3 -> "星期三"
+                        4 -> "星期四"
+                        5 -> "星期五"
+                        6 -> "星期六"
+                        7 -> "星期日"
+                        else -> ""
                     }
-                }
-            } else {
-                // 没有账单时可在此展示空白提示
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("当天没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val expenseTotal = selectedDateBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                    val incomeTotal = selectedDateBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                    val dateStr = "${animatedDate?.monthValue}月${animatedDate?.dayOfMonth}日"
+
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        item {
+                            Shared_BillDayGroup(
+                                dateStr = dateStr,
+                                dayOfWeekStr = selectedDayOfWeekStr,
+                                expenseTotal = expenseTotal,
+                                incomeTotal = incomeTotal,
+                                bills = selectedDateBills,
+                                onEditBill = { /* TODO */ },
+                                onDeleteBill = { /* TODO */ }
+                            )
+                        }
+                    }
+                } else {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("当天没有记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
+
+        Shared_MonthYearPickerDialog(
+            visible = showMonthPicker,
+            currentMonth = state.firstVisibleMonth.yearMonth.atDay(1),
+            onConfirm = { newDate ->
+                showMonthPicker = false
+                val targetYearMonth = java.time.YearMonth.of(newDate.year, newDate.monthValue)
+                coroutineScope.launch {
+                    state.animateScrollToMonth(targetYearMonth)
+                }
+            },
+            onDismiss = { showMonthPicker = false }
+        )
     }
 }

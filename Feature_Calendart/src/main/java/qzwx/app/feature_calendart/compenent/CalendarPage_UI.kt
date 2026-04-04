@@ -1,62 +1,68 @@
 package qzwx.app.feature_calendart.compenent
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import java.time.YearMonth
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.background
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import java.time.DayOfWeek
-import java.time.format.TextStyle as JavaTextStyle
+import java.time.YearMonth
 import java.util.Locale
+import java.time.format.TextStyle as JavaTextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarTopBar(
     currentMonth: YearMonth,
     onTodayClick: () -> Unit,
+    onMonthClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onMonthClick() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
                 Text(
                     text = "${currentMonth.year}年${currentMonth.monthValue}月",
                     style = MaterialTheme.typography.titleLarge
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onTodayClick) {
-                    Icon(
-                        imageVector = Icons.Default.Today,
-                        contentDescription = "回到今天"
-                    )
-                }
+                // Optionally add drop down icon indicator
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
+                    contentDescription = "选择月份",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onTodayClick) {
+                Icon(
+                    imageVector = Icons.Default.Today,
+                    contentDescription = "回到今天"
+                )
             }
         },
         modifier = modifier
@@ -75,12 +81,19 @@ fun CalendarDayCell(
 ) {
     if (day.position != DayPosition.MonthDate) {
         // 如果不是当月日期（如上个月或下个月），渲染空白区域隐藏
-        Spacer(modifier = modifier.fillMaxWidth().padding(vertical = 2.dp, horizontal = 1.dp))
+        Spacer(modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 1.dp))
         return
     }
 
-    val isSelectedBg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-    val highlightBorder = if (isToday) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)) else Modifier
+    val isSelectedBg =
+        if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+    val highlightBorder = if (isToday) Modifier.border(
+        1.dp,
+        MaterialTheme.colorScheme.primary,
+        RoundedCornerShape(4.dp)
+    ) else Modifier
 
     Column(
         modifier = modifier
@@ -144,7 +157,9 @@ fun CalendarDayCell(
 
 @Composable
 fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
-    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(bottom = 8.dp)) {
         for (dayOfWeek in daysOfWeek) {
             Text(
                 modifier = Modifier.weight(1f),
