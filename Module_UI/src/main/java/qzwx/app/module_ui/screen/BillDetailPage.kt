@@ -8,10 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -98,11 +100,18 @@ fun BillDetailPage(
                     if (!billEntity.remark.isNullOrBlank()) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         DetailRow(
-                            icon = Icons.Default.Notes,
+                            icon = Icons.AutoMirrored.Filled.Notes,
                             label = "Remark",
                             value = billEntity.remark!!
                         )
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    DetailRow(
+                        icon = Icons.Default.AccountBalanceWallet,
+                        label = "Payment / Wallet",
+                        value = billEntity.walletType.displayName
+                    )
 
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     val createTimeStr = Instant.ofEpochMilli(billEntity.createdAt)
