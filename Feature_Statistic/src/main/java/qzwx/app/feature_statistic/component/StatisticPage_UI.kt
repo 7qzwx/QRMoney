@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.*
@@ -378,7 +380,7 @@ fun StatisticThreeWayToggle(
 }
 
 @Composable
-fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
+fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel(), backStack: NavBackStack<NavKey>? = null) {
     val selectedDate by viewModel.selectedMonth.collectAsState()
     val monthlyState by viewModel.monthlyChartState.collectAsState(initial = MonthlyChartState())
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
@@ -633,13 +635,14 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     val monthlyBillsForPie = allBills.filter { bill ->
-                        val date =
-                            Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
-                                .toLocalDate()
+                        val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
                         date.year == targetDate.year && date.month == targetDate.month
                     }
                     qzwx.app.module_ui.components.Shared_CategoryPieChart(
-                        bills = monthlyBillsForPie
+                        bills = monthlyBillsForPie,
+                        onCategoryClick = { categoryName, categoryBills ->
+                            backStack?.add(qzwx.app.module_ui.nav3.UIRoute.CategoryBills(categoryName, categoryBills))
+                        }
                     )
                 }
             }
@@ -648,7 +651,7 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 }
 
 @Composable
-fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
+fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel(), backStack: NavBackStack<NavKey>? = null) {
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
     var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
@@ -946,7 +949,10 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
 
                     qzwx.app.module_ui.components.Shared_CategoryPieChart(
-                        bills = targetYearlyBills
+                        bills = targetYearlyBills,
+                        onCategoryClick = { categoryName, categoryBills ->
+                            backStack?.add(qzwx.app.module_ui.nav3.UIRoute.CategoryBills(categoryName, categoryBills))
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -1134,3 +1140,4 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
         }
     }
 }
+

@@ -20,10 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatisticPage() {
+fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
     val tabs = listOf("日常", "月统计", "年统计", "自定义")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
@@ -56,7 +58,10 @@ fun StatisticPage() {
                                         pagerState.animateScrollToPage(index)
                                     }
                                 }
-                                .padding(horizontal = 8.dp, vertical = 6.dp), // Reduced horizontal padding
+                                .padding(
+                                    horizontal = 8.dp,
+                                    vertical = 6.dp
+                                ), // Reduced horizontal padding
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -86,9 +91,9 @@ fun StatisticPage() {
                 if (page == 0) {
                     qzwx.app.feature_statistic.component.DailyStatisticView()
                 } else if (page == 1) {
-                    qzwx.app.feature_statistic.component.MonthlyStatisticView()
+                    qzwx.app.feature_statistic.component.MonthlyStatisticView(backStack = backStack)
                 } else if (page == 2) {
-                    qzwx.app.feature_statistic.component.YearlyStatisticView()
+                    qzwx.app.feature_statistic.component.YearlyStatisticView(backStack = backStack)
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = "${tabs[page]} 页面内容待添加")

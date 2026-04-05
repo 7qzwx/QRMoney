@@ -31,7 +31,8 @@ import java.util.Locale
 @Composable
 fun Shared_CategoryPieChart(
     bills: List<QBillEntity>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCategoryClick: ((String, List<QBillEntity>) -> Unit)? = null
 ) {
     var isPieChartExpense by remember { mutableStateOf(true) }
     var selectedPieCategory by remember { mutableStateOf<String?>(null) }
@@ -233,6 +234,9 @@ fun Shared_CategoryPieChart(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable(enabled = onCategoryClick != null) {
+                                        onCategoryClick?.invoke(pair.first, pieBills.filter { it.category == pair.first })
+                                    }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -312,4 +316,3 @@ fun Shared_CategoryPieChart(
         }
     }
 }
-

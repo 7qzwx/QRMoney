@@ -93,16 +93,18 @@ fun QApp() {
                 CalendarRouteBuilder(backStack)
                 AssetRouteBuilder()
                 MyRouteBuilder()
-                StatisticRouteBuilder()
+                StatisticRouteBuilder(backStack)
                 UiRouteBuilder(
                     onBackClick = {
                         if (backStack.size > 1) {
                             backStack.removeLastOrNull()
                         }
+                    },
+                    onNavigateToBillDetail = { bill ->
+                        backStack.add(qzwx.app.module_ui.nav3.UIRoute.BillDetail(bill))
                     }
                 )
             }
         )
     }
 }
-
