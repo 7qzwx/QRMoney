@@ -2,8 +2,6 @@ package qzwx.app.qrmoney
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,9 +17,6 @@ import qzwx.app.module_data.dao.QWalletDao
 @Module
 @InstallIn(SingletonComponent::class) // 作用域：应用级单例，整个APP都能用
 object QAppModule {
-
-
-
     @Provides
     @Singleton
     fun qBillDatabase(@ApplicationContext context: Context): QBillDatabase {
@@ -30,6 +25,7 @@ object QAppModule {
             QBillDatabase::class.java,
             "QBill数据库"    //自定义数据库名称
         )
+            .fallbackToDestructiveMigration()
             .build()
     }
 

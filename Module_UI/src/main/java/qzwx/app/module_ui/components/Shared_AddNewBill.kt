@@ -15,9 +15,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -49,15 +45,16 @@ import com.maxkeppeler.sheets.clock.models.ClockSelection
 import kotlinx.coroutines.launch
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
-import qzwx.app.module_ui.components.Shared_BillDayGroup
-import qzwx.app.module_ui.components.Shared_BillItem
-import qzwx.app.module_ui.components.Shared_MonthYearPickerDialog
+import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.data.billCategoryList
+import qzwx.app.module_ui.data.incomeCategoryList
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.hilt.navigation.compose.hiltViewModel
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 
 @Composable
 fun AddNewBill_AmountInput(
@@ -180,16 +177,18 @@ fun AddNewBill_TypeToggle(
 
 @Composable
 fun AddNewBill_CategoryGrid(
+    isExpense: Boolean,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit
 ) {
+    val currentList = if (isExpense) billCategoryList else incomeCategoryList
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.heightIn(max = 250.dp)
     ) {
-        items(billCategoryList) { category ->
+        items(currentList) { category ->
             val isSelected = selectedCategory == category.name
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -244,12 +243,14 @@ fun AddNewBill_CategoryGrid(
 fun AddNewBill_DateTimeRow(
     selectedDate: LocalDate,
     selectedTime: LocalTime,
+    selectedWalletName: String,
     onDateClick: () -> Unit,
-    onTimeClick: () -> Unit
+    onTimeClick: () -> Unit,
+    onWalletClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -260,7 +261,7 @@ fun AddNewBill_DateTimeRow(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(vertical = 16.dp, horizontal = 12.dp)
+                    .padding(vertical = 16.dp, horizontal = 4.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -269,11 +270,11 @@ fun AddNewBill_DateTimeRow(
                     imageVector = Icons.Default.CalendarToday,
                     contentDescription = "Date",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd")),
+                    text = selectedDate.format(DateTimeFormatter.ofPattern("M/d")),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -289,7 +290,7 @@ fun AddNewBill_DateTimeRow(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(vertical = 16.dp, horizontal = 12.dp)
+                    .padding(vertical = 16.dp, horizontal = 4.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -298,11 +299,40 @@ fun AddNewBill_DateTimeRow(
                     imageVector = Icons.Default.AccessTime,
                     contentDescription = "Time",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onWalletClick() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 16.dp, horizontal = 4.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = "Wallet",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = selectedWalletName,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -311,18 +341,60 @@ fun AddNewBill_DateTimeRow(
     }
 }
 
-@Preview(showBackground = true)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Shared_AddNewBill(
     initialBill: QBillEntity? = null,
     defaultDate: LocalDate = LocalDate.now(),
     onDismissRequest: () -> Unit = {},
+    onSaveRequest: (QBillEntity) -> Unit = {},
+    viewModel: SharedBillViewModel = hiltViewModel()
+) {
+    val defaultWalletName by viewModel.defaultWalletName.collectAsState()
+    val allWallets by viewModel.wallets.collectAsState()
+
+    var selectedWallet by remember(initialBill) {
+        // Prefer walletType snapshot when editing old bills, fallback to linked wallet id.
+        val existingWallet = initialBill?.walletType?.displayName ?: initialBill?.walletId?.let { id ->
+            allWallets.find { it.id == id }?.type?.displayName
+        }
+        mutableStateOf<String?>(existingWallet)
+    }
+
+    val effectiveWalletName = selectedWallet ?: defaultWalletName
+
+    Shared_AddNewBill_Content(
+        initialBill = initialBill,
+        defaultDate = defaultDate,
+        selectedWallet = effectiveWalletName,
+        onWalletChanged = { selectedWallet = it },
+        onDismissRequest = onDismissRequest,
+        onSaveRequest = { bill ->
+            val matchingWallet = allWallets.find { it.type.displayName == effectiveWalletName }
+            val fallbackWallet = allWallets.find { it.isDefault } ?: allWallets.firstOrNull()
+            val selectedType = WalletType.fromDisplayName(effectiveWalletName)
+            val billWithWallet = bill.copy(
+                walletId = matchingWallet?.id ?: fallbackWallet?.id,
+                walletType = selectedType
+            )
+            onSaveRequest(billWithWallet)
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Shared_AddNewBill_Content(
+    initialBill: QBillEntity? = null,
+    defaultDate: LocalDate = LocalDate.now(),
+    selectedWallet: String = "现金",
+    onWalletChanged: (String) -> Unit = {},
+    onDismissRequest: () -> Unit = {},
     onSaveRequest: (QBillEntity) -> Unit = {}
 ) {
     val calendarState = rememberUseCaseState()
     val clockState = rememberUseCaseState()
-    var selectedDate by remember {
+    var selectedDate by remember(initialBill, defaultDate) {
         mutableStateOf(initialBill?.let {
             LocalDateTime.ofInstant(
                 java.time.Instant.ofEpochMilli(it.createdAt),
@@ -330,7 +402,7 @@ fun Shared_AddNewBill(
             ).toLocalDate()
         } ?: defaultDate)
     }
-    var selectedTime by remember {
+    var selectedTime by remember(initialBill) {
         mutableStateOf(initialBill?.let {
             LocalDateTime.ofInstant(
                 java.time.Instant.ofEpochMilli(it.createdAt),
@@ -339,16 +411,22 @@ fun Shared_AddNewBill(
         } ?: LocalTime.now())
     }
 
-    var amountValue by remember {
+    var amountValue by remember(initialBill) {
         mutableStateOf(initialBill?.let { if (it.amount > 0) it.amount.toString() else "" } ?: "")
     }
-    var isExpense by remember { mutableStateOf(initialBill?.type != BillType.INCOME) }
-    var selectedCategory by remember {
+    var isExpense by remember(initialBill) { mutableStateOf(initialBill?.type != BillType.INCOME) }
+    var selectedCategory by remember(initialBill, isExpense) {
         mutableStateOf(
-            initialBill?.category ?: billCategoryList.firstOrNull()?.name ?: ""
+            initialBill?.category ?: if (isExpense) {
+                billCategoryList.firstOrNull()?.name ?: ""
+            } else {
+                incomeCategoryList.firstOrNull()?.name ?: ""
+            }
         )
     }
-    var remarkValue by remember { mutableStateOf(initialBill?.remark ?: "") }
+    var remarkValue by remember(initialBill) { mutableStateOf(initialBill?.remark ?: "") }
+
+    var showWalletDialog by remember { mutableStateOf(false) }
 
     var isClosing by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
@@ -421,7 +499,14 @@ fun Shared_AddNewBill(
 
             AddNewBill_TypeToggle(
                 isExpense = isExpense,
-                onExpenseChange = { isExpense = it }
+                onExpenseChange = { newIsExpense ->
+                    isExpense = newIsExpense
+                    selectedCategory = if (newIsExpense) {
+                        billCategoryList.firstOrNull()?.name ?: ""
+                    } else {
+                        incomeCategoryList.firstOrNull()?.name ?: ""
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -464,6 +549,7 @@ fun Shared_AddNewBill(
             Spacer(modifier = Modifier.height(16.dp))
 
             AddNewBill_CategoryGrid(
+                isExpense = isExpense,
                 selectedCategory = selectedCategory,
                 onCategorySelected = { selectedCategory = it }
             )
@@ -488,8 +574,10 @@ fun Shared_AddNewBill(
             AddNewBill_DateTimeRow(
                 selectedDate = selectedDate,
                 selectedTime = selectedTime,
+                selectedWalletName = selectedWallet,
                 onDateClick = { calendarState.show() },
-                onTimeClick = { clockState.show() }
+                onTimeClick = { clockState.show() },
+                onWalletClick = { showWalletDialog = true }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -531,6 +619,39 @@ fun Shared_AddNewBill(
                 )
             }
         }
+    }
+
+    if (showWalletDialog) {
+        val wallets = WalletType.entries.map { it.displayName }
+        AlertDialog(
+            onDismissRequest = { showWalletDialog = false },
+            title = { Text("选择支付类型", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    wallets.forEach { wallet ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onWalletChanged(wallet)
+                                    showWalletDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = wallet, style = MaterialTheme.typography.bodyLarge)
+                            if (wallet == selectedWallet) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showWalletDialog = false }) { Text("关闭") }
+            }
+        )
     }
 }
 

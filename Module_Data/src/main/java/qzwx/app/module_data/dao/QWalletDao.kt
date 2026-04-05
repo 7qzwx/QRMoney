@@ -14,8 +14,14 @@ interface QWalletDao {
     @Query("SELECT * FROM wallet_table")
     fun getAllWallets(): Flow<List<QWalletEntity>>
 
+    @Query("SELECT * FROM wallet_table")
+    suspend fun getAllWalletsOnce(): List<QWalletEntity>
+
     @Query("SELECT * FROM wallet_table WHERE id = :id")
     suspend fun getWalletById(id: Long): QWalletEntity?
+
+    @Query("SELECT * FROM wallet_table WHERE `类型` = :type LIMIT 1")
+    suspend fun getWalletByType(type: qzwx.app.module_data.entity.WalletType): QWalletEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWallet(wallet: QWalletEntity): Long

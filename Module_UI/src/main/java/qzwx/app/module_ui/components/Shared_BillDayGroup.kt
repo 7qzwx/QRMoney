@@ -2,24 +2,12 @@ package qzwx.app.module_ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,13 +20,26 @@ import me.saket.swipe.SwipeableActionsBox
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_ui.data.billCategoryList
-import kotlin.collections.forEachIndexed
+import qzwx.app.module_ui.data.incomeCategoryList
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
-fun Shared_BillItem(bill: QBillEntity, onClick: () -> Unit = {}) {
-    val categoryInfo =
-        billCategoryList.find { it.name == bill.category } ?: billCategoryList.first()
+fun Shared_BillItem(
+    bill: QBillEntity,
+    onClick: () -> Unit = {},
+    viewModel: SharedBillViewModel = hiltViewModel()
+) {
     val isExpense = bill.type == BillType.EXPENSE
+    val currentList = if (isExpense) billCategoryList else incomeCategoryList
+    val categoryInfo =
+        currentList.find { it.name == bill.category } ?: currentList.first()
+
+    val wallets by viewModel.wallets.collectAsState()
+    val walletName = wallets.find { it.id == bill.walletId }?.type?.displayName ?: "现金"
 
     Row(
         modifier = Modifier
@@ -99,6 +100,28 @@ fun Shared_BillItem(bill: QBillEntity, onClick: () -> Unit = {}) {
                 fontWeight = FontWeight.ExtraBold,
                 color = amountColor
             )
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Wallet Badge
+            val (bgColor, textColor) = when (walletName) {
+                "支付宝" -> Color(0xFFE3F2FD) to Color(0xFF1976D2)
+                "微信" -> Color(0xFFE8F5E9) to Color(0xFF388E3C)
+                "银行卡" -> Color(0xFFFFF3E0) to Color(0xFFF57C00)
+                "现金" -> Color(0xFFFFFDE7) to Color(0xFFFBC02D)
+                else -> Color(0xFFF5F5F5) to Color(0xFF616161) // 其它
+            }
+            Box(
+                modifier = Modifier
+                    .background(color = bgColor, shape = RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = walletName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

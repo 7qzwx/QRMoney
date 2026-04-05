@@ -6,4 +6,11 @@ import kotlinx.serialization.Serializable
 sealed class AssetRoute : NavKey {
     @Serializable
     data object Asset : AssetRoute()
+
+    @Serializable
+    data class WalletDetail(
+        val walletTypeName: String,
+        val initialBalance: Double = 0.0
+    ) : AssetRoute()
+
 }

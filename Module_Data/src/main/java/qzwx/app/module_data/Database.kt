@@ -14,7 +14,7 @@ import qzwx.app.module_data.entity.QWalletEntity
 
 @Database(
     entities = [QBillEntity::class, QMyDateEntity::class, QWalletEntity::class, QDebtEntity::class],
-    version = 3
+    version = 5
 )
 abstract class QBillDatabase : RoomDatabase() {
     abstract fun qBillDao(): QBillDao

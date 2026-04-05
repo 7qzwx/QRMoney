@@ -14,7 +14,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
-import qzwx.app.feature_home.components.AddNewBill
 import qzwx.app.feature_home.components.Home_SnakBar
 import qzwx.app.feature_home.components.Home_TopBar
 import qzwx.app.feature_home.components.Home_TotalCard
@@ -23,6 +22,7 @@ import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_ui.nav3.UIRoute
 import qzwx.app.feature_home.nav3.HomeRoute
+import qzwx.app.module_ui.components.Shared_AddNewBill
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -47,7 +47,7 @@ fun HomePage(
     var userSelectedDate by remember { mutableStateOf<java.time.LocalDate?>(null) }
 
     if (showBottomSheet) {
-        AddNewBill(
+        Shared_AddNewBill(
             initialBill = draftBill,
             onDismissRequest = {
                 showBottomSheet = false
@@ -89,7 +89,10 @@ fun HomePage(
         },
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
         floatingActionButton = {
-            FloatingActionButton(onClick = { showBottomSheet = true }) {
+            FloatingActionButton(onClick = {
+                draftBill = null
+                showBottomSheet = true
+            }) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "新增账单"

@@ -43,3 +43,26 @@ val billCategoryList = listOf(
         icon = Icons.Rounded.LocalPlay
     ),
 )
+
+val incomeCategoryList = listOf(
+    BillCategory(
+        name = "工资",
+        icon = Icons.Rounded.Work
+    ),
+    BillCategory(
+        name = "奖金",
+        icon = Icons.Rounded.ModeNight
+    ),
+    BillCategory(
+        name = "兼职",
+        icon = Icons.Rounded.AccessTime
+    ),
+    BillCategory(
+        name = "借入",
+        icon = Icons.Rounded.AccountBalance
+    ),
+    BillCategory(
+        name = "其他",
+        icon = Icons.Rounded.LocalPlay
+    ),
+)
