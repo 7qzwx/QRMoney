@@ -8,11 +8,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
+import qzwx.app.module_ui.components.Shared_AddNewBill
 import qzwx.app.module_ui.components.Shared_BillDayGroup
+import qzwx.app.module_ui.viewmodel.CategoryBills_VM
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -22,10 +26,42 @@ fun CategoryBillsPage(
     categoryName: String,
     bills: List<QBillEntity>,
     onBackClick: () -> Unit,
-    onItemClick: (QBillEntity) -> Unit
+    onItemClick: (QBillEntity) -> Unit,
+    viewModel: CategoryBills_VM = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var localBills by remember(bills) { mutableStateOf(bills) }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
+
+    if (showBottomSheet) {
+        Shared_AddNewBill(
+            initialBill = draftBill,
+            defaultDate = LocalDate.now(),
+            onDismissRequest = {
+                showBottomSheet = false
+                draftBill = null
+            },
+            onSaveRequest = { modifiedBill ->
+                coroutineScope.launch {
+                    viewModel.insertBill(modifiedBill)
+
+                    // Update local ui list manually
+                    localBills = localBills.filterNot { it.id == modifiedBill.id } + modifiedBill
+
+                    showBottomSheet = false
+                    draftBill = null
+
+                    snackbarHostState.showSnackbar(
+                        message = "已更新账单",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -49,14 +85,14 @@ fun CategoryBillsPage(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            val billsByDate = bills.groupBy {
+            val billsByDate = localBills.groupBy {
                 LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(it.createdAt),
                     ZoneId.systemDefault()
                 ).toLocalDate()
             }.toSortedMap(compareByDescending { it })
 
-            if (bills.isEmpty()) {
+            if (localBills.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                     Text(
                         text = "暂无数据",
@@ -94,14 +130,23 @@ fun CategoryBillsPage(
                                 expenseTotal = expenseTotal,
                                 incomeTotal = incomeTotal,
                                 bills = dailyBills,
-                                onEditBill = {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("编辑账单功能暂未支持")
-                                    }
+                                onEditBill = { billToEdit ->
+                                    draftBill = billToEdit
+                                    showBottomSheet = true
                                 },
-                                onDeleteBill = {
+                                onDeleteBill = { billToDelete ->
                                     coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("删除账单功能暂未支持")
+                                        viewModel.deleteBill(billToDelete)
+                                        localBills = localBills.filterNot { it.id == billToDelete.id }
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "已删除账单",
+                                            actionLabel = "撤销",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.insertBill(billToDelete)
+                                            localBills = localBills + billToDelete
+                                        }
                                     }
                                 },
                                 onItemClick = onItemClick
@@ -113,4 +158,3 @@ fun CategoryBillsPage(
         }
     }
 }
-
