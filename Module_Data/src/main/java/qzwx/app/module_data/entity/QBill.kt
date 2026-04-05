@@ -23,6 +23,12 @@ data class QBillEntity(
 
     // 修改时间
     @ColumnInfo(name = "修改时间") val updatedAt: Long = System.currentTimeMillis(),
+
+    // 关联的钱包ID：记录该笔账单资金从哪个钱包发生变化
+    @ColumnInfo(name = "wallet_id") val walletId: Long? = null,
+
+    // 关联的负债ID：如果该账单属于某笔借款或还款记录，可关联此ID
+    @ColumnInfo(name = "debt_id") val debtId: Long? = null
 )
 
 

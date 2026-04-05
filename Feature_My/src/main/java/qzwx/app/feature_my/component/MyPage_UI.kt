@@ -18,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
@@ -30,7 +31,7 @@ data class CardData(
     val expire: String,
     val holder: String
 )
-
+@Preview(showBackground = true)
 @Composable
 fun MyPage_Card() {
     val rotated = remember { mutableStateOf(false) }  // 用于判断是否翻转
