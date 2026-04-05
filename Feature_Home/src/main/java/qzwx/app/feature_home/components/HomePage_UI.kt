@@ -25,7 +25,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -60,6 +64,15 @@ fun AddNewBill_AmountInput(
     amountValue: String,
     onAmountChange: (String) -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(150)
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -107,9 +120,11 @@ fun AddNewBill_AmountInput(
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .alignByBaseline(),
+                    .alignByBaseline()
+                    .focusRequester(focusRequester),
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.Center) {
                         if (amountValue.isEmpty()) {

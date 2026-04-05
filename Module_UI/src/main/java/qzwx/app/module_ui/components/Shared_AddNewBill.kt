@@ -68,7 +68,7 @@ fun AddNewBill_AmountInput(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(300)
+        kotlinx.coroutines.delay(150)
         focusRequester.requestFocus()
         keyboardController?.show()
     }
