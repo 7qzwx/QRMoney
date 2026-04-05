@@ -167,7 +167,7 @@ fun Shared_CategoryPieChart(
                                         selected = pair.first == selectedPieCategory
                                     )
                                 },
-                                style = Pie.Style.Fill
+                                style = Pie.Style.Stroke()
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))

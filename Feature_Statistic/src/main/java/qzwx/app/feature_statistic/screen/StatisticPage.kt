@@ -95,9 +95,7 @@ fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
                 } else if (page == 2) {
                     qzwx.app.feature_statistic.component.YearlyStatisticView(backStack = backStack)
                 } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "${tabs[page]} 页面内容待添加")
-                    }
+                    qzwx.app.feature_statistic.component.CustomStatisticView(backStack = backStack)
                 }
             }
         }
