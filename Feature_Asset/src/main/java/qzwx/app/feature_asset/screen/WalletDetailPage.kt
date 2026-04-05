@@ -1,8 +1,10 @@
 package qzwx.app.feature_asset.screen
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -43,6 +47,7 @@ import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 import java.util.Locale
 
+@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletDetailPage(
@@ -60,14 +65,20 @@ fun WalletDetailPage(
 
     var editedText by remember(walletTypeName) { mutableStateOf(String.format(Locale.US, "%.2f", initialBalance)) }
     var isEditedByUser by remember(walletTypeName) { mutableStateOf(false) }
+    var isDefault by remember(walletTypeName) { mutableStateOf(wallet.isDefault) }
 
     LaunchedEffect(walletTypeName) {
         viewModel.ensureWalletsInitialized()
     }
 
-    LaunchedEffect(dbWallet?.id, dbWallet?.updatedAt, isEditedByUser) {
-        if (dbWallet != null && !isEditedByUser) {
-            editedText = String.format(Locale.US, "%.2f", dbWallet.balance)
+    LaunchedEffect(dbWallet?.id, dbWallet?.updatedAt, dbWallet?.isDefault, isEditedByUser) {
+        if (dbWallet != null) {
+            if (!isEditedByUser) {
+                editedText = String.format(Locale.US, "%.2f", dbWallet.balance)
+            }
+            if (!isEditedByUser) {
+                isDefault = dbWallet.isDefault
+            }
         }
     }
 
@@ -113,30 +124,53 @@ fun WalletDetailPage(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("修改余额", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = editedText,
-                        onValueChange = { input ->
-                            if (input.isEmpty() || input.matches(Regex("^\\d*(\\.\\d{0,2})?$"))) {
-                                editedText = input
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = editedText,
+                            onValueChange = { input ->
+                                if (input.isEmpty() || input.matches(Regex("^\\d*(\\.\\d{0,2})?$"))) {
+                                    editedText = input
+                                    isEditedByUser = true
+                                }
+                            },
+                            label = { Text("输入余额") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            supportingText = {
+                                if (wallets.isEmpty()) {
+                                    Text("钱包数据加载中...")
+                                } else if (!isValidInput && editedText.isNotBlank()) {
+                                    Text("请输入数字，且小数最多 2 位", color = Color.Red)
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = isDefault,
+                            onCheckedChange = {
+                                isDefault = it
                                 isEditedByUser = true
                             }
-                        },
-                        label = { Text("输入余额") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        supportingText = {
-                            if (wallets.isEmpty()) {
-                                Text("钱包数据加载中...")
-                            } else if (!isValidInput && editedText.isNotBlank()) {
-                                Text("请输入数字，且小数最多 2 位", color = Color.Red)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        )
+                        Text("设为默认支付方式 (✅)")
+                    }
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = {
-                            viewModel.updateWalletBalance(walletType, parsedBalance ?: 0.0) {
+                            viewModel.updateWalletBalance(walletType, parsedBalance ?: 0.0, isDefault) {
+                                // 模拟设为默认支出的接口操作等
                                 onBackClick()
                             }
                         },

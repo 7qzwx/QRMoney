@@ -71,13 +71,24 @@ class SharedBillViewModel @Inject constructor(
             "支付宝"
         )
 
-    fun updateWalletBalance(type: WalletType, newBalance: Double, onDone: () -> Unit = {}) {
+    fun updateWalletBalance(type: WalletType, newBalance: Double, isDefault: Boolean? = null, onDone: () -> Unit = {}) {
         viewModelScope.launch {
+            if (isDefault == true) {
+                // 将其他的钱包设为非默认
+                val allExisting = walletDao.getAllWalletsOnce()
+                allExisting.forEach { w ->
+                    if (w.isDefault) {
+                        walletDao.updateWallet(w.copy(isDefault = false, updatedAt = System.currentTimeMillis()))
+                    }
+                }
+            }
+
             val existingWallet = walletDao.getWalletByType(type)
             if (existingWallet != null) {
                 walletDao.updateWallet(
                     existingWallet.copy(
                         balance = newBalance,
+                        isDefault = isDefault ?: existingWallet.isDefault,
                         updatedAt = System.currentTimeMillis()
                     )
                 )
@@ -86,7 +97,7 @@ class SharedBillViewModel @Inject constructor(
                     QWalletEntity(
                         type = type,
                         balance = newBalance,
-                        isDefault = type == WalletType.ALIPAY
+                        isDefault = isDefault ?: (type == WalletType.ALIPAY)
                     )
                 )
             }

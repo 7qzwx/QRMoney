@@ -5,10 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,9 +49,27 @@ fun AssetsPage(
     }
     val totalAssets = displayWallets.sumOf { it.balance }
 
+    var isExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("资产") })
+            TopAppBar(
+                title = {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text("资产")
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { activity.finish() }) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* 检索 */ }) {
+                        Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
+                    }
+                }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -58,7 +84,19 @@ fun AssetsPage(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("总资产", style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("总资产", style = MaterialTheme.typography.labelLarge)
+                        IconButton(onClick = { isExpanded = !isExpanded }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = "展开"
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = formatAmount(totalAssets),
@@ -71,6 +109,46 @@ fun AssetsPage(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("本月收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("本月支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("本周收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("本周支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    } else {
+                        // 预留总收支，也可以走真实逻辑
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("总收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("总支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -126,6 +204,12 @@ private fun WalletBalanceRow(
                 .padding(start = 10.dp),
             style = MaterialTheme.typography.bodyLarge
         )
+        if (wallet.isDefault) {
+            Text(
+                text = "✅",
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
         Text(
             text = formatAmount(wallet.balance),
             style = MaterialTheme.typography.bodyLarge,
