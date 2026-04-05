@@ -1,13 +1,10 @@
 package qzwx.app.feature_statistic.component
 
-import android.R.attr.scaleX
-import android.R.attr.scaleY
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -16,14 +13,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,12 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
-import ir.ehsannarmani.compose_charts.PieChart
 import ir.ehsannarmani.compose_charts.models.*
 import qzwx.app.feature_statistic.viewmodel.MonthlyChartState
 import qzwx.app.feature_statistic.viewmodel.StatisticPage_VM
 import qzwx.app.module_data.entity.BillType
-import qzwx.app.module_ui.data.billCategoryList
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -55,7 +51,6 @@ fun DayOfWeek.toChinese(): String = when (this) {
     DayOfWeek.SATURDAY -> "周六"
     DayOfWeek.SUNDAY -> "周日"
 }
-
 
 
 @Composable
@@ -343,12 +338,55 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 }
 
 @Composable
+fun StatisticThreeWayToggle(
+    selectedType: Int, // 0: 支出, 1: 收入, 2: 混合
+    onTypeSelected: (Int) -> Unit,
+    primaryColor: Color,
+    surfaceColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
+    ) {
+        val types = listOf("支出", "收入", "混合")
+        types.forEachIndexed { index, title ->
+            val isSelected = selectedType == index
+            val bgColor by animateColorAsState(
+                if (isSelected) primaryColor else surfaceColor,
+                label = "ToggleBg$index"
+            )
+            val textColor by animateColorAsState(
+                if (isSelected) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                label = "ToggleText$index"
+            )
+            Box(
+                modifier = Modifier
+                    .background(bgColor)
+                    .clickable { onTypeSelected(index) }
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = title,
+                    color = textColor,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
     val selectedDate by viewModel.selectedMonth.collectAsState()
     val monthlyState by viewModel.monthlyChartState.collectAsState(initial = MonthlyChartState())
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
     var isPieChartExpense by remember { mutableStateOf(true) }
+
+    var barChartType by remember { mutableStateOf(0) } // 0: 支出, 1: 收入, 2: 混合
+    var lineChartType by remember { mutableStateOf(0) } // 0: 支出, 1: 收入, 2: 混合
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -428,7 +466,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
             AnimatedContent(
                 targetState = selectedDate,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            400
+                        )
+                    )
                 },
                 label = "MonthlyContentAnim"
             ) { targetDate ->
@@ -454,10 +496,26 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = "收支统计", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        qzwx.app.module_ui.components.Shared_ChartLegend()
+                        StatisticThreeWayToggle(
+                            selectedType = barChartType,
+                            onTypeSelected = { barChartType = it },
+                            primaryColor = primaryColor,
+                            surfaceColor = surfaceColor
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    val filteredBarDataList = remember(monthlyState.barDataList, barChartType) {
+                        monthlyState.barDataList.map { bar ->
+                            val newValues = when (barChartType) {
+                                0 -> listOf(bar.values.getOrNull(0)).filterNotNull()
+                                1 -> listOf(bar.values.getOrNull(1)).filterNotNull()
+                                else -> bar.values
+                            }
+                            bar.copy(values = newValues)
+                        }
+                    }
 
                     // Chart
                     Box(
@@ -466,11 +524,11 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                             .height(260.dp)
                             .padding(horizontal = 16.dp)
                     ) {
-                        if (monthlyState.isReady && monthlyState.barDataList.isNotEmpty()) {
+                        if (monthlyState.isReady && filteredBarDataList.isNotEmpty()) {
                             ColumnChart(
                                 animationDelay = 5,
                                 modifier = Modifier.fillMaxSize(),
-                                data = monthlyState.barDataList,
+                                data = filteredBarDataList,
                                 barProperties = BarProperties(
                                     spacing = 2.dp,
                                     cornerRadius = Bars.Data.Radius.Rectangle(
@@ -517,10 +575,24 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = "收支趋势", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        qzwx.app.module_ui.components.Shared_ChartLegend()
+                        StatisticThreeWayToggle(
+                            selectedType = lineChartType,
+                            onTypeSelected = { lineChartType = it },
+                            primaryColor = primaryColor,
+                            surfaceColor = surfaceColor
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    val filteredLineChartData =
+                        remember(monthlyState.theLineChartData, lineChartType) {
+                            when (lineChartType) {
+                                0 -> monthlyState.theLineChartData.filter { it.label == "支出" }
+                                1 -> monthlyState.theLineChartData.filter { it.label == "收入" }
+                                else -> monthlyState.theLineChartData
+                            }
+                        }
 
                     // Line Chart
                     Box(
@@ -529,10 +601,10 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                             .height(260.dp)
                             .padding(horizontal = 16.dp)
                     ) {
-                        if (monthlyState.isReady && monthlyState.theLineChartData.isNotEmpty()) {
+                        if (monthlyState.isReady && filteredLineChartData.isNotEmpty()) {
                             LineChart(
                                 modifier = Modifier.fillMaxSize(),
-                                data = monthlyState.theLineChartData,
+                                data = filteredLineChartData,
                                 labelProperties = LabelProperties(
                                     rotation = LabelProperties.Rotation(
                                         degree = 0f
@@ -561,7 +633,9 @@ fun MonthlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     val monthlyBillsForPie = allBills.filter { bill ->
-                        val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                        val date =
+                            Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
+                                .toLocalDate()
                         date.year == targetDate.year && date.month == targetDate.month
                     }
                     qzwx.app.module_ui.components.Shared_CategoryPieChart(
@@ -594,7 +668,8 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
     val yearlyBills = remember(allBills, selectedYear) {
         allBills.filter { bill ->
-            val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+            val date =
+                Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
             date.year == selectedYear
         }
     }
@@ -663,17 +738,24 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
             AnimatedContent(
                 targetState = selectedYear,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            400
+                        )
+                    )
                 },
                 label = "YearlyContentAnim"
             ) { targetYear ->
 
                 val targetYearlyBills = allBills.filter { bill ->
-                    val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val date = Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
+                        .toLocalDate()
                     date.year == targetYear
                 }
-                val targetYearExpense = targetYearlyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                val targetYearIncome = targetYearlyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                val targetYearExpense =
+                    targetYearlyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                val targetYearIncome =
+                    targetYearlyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
                 val targetYearBalance = targetYearIncome - targetYearExpense
 
                 Column {
@@ -756,17 +838,24 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                     AnimatedContent(
                         targetState = isHeatmapExpense,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                            fadeIn(animationSpec = tween(400)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    400
+                                )
+                            )
                         },
                         label = "HeatmapContentAnim"
                     ) { targetIsExpense ->
-                        val typeToFilter = if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
-                        val activeColor = if (targetIsExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
+                        val typeToFilter =
+                            if (targetIsExpense) BillType.EXPENSE else BillType.INCOME
+                        val activeColor =
+                            if (targetIsExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
                         val inactiveColor = Color(0xFFEEEEEE)
 
                         val heatBills = targetYearlyBills.filter { it.type == typeToFilter }
                         val billDates = heatBills.map {
-                            Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
+                            Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
+                                .toLocalDate()
                         }.toSet()
 
                         Column(
@@ -783,9 +872,12 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                     for (col in 0 until 4) {
                                         val monthIndex = row * 4 + col + 1
                                         val isLeap = java.time.Year.isLeap(targetYear.toLong())
-                                        val daysInMonth = java.time.Month.of(monthIndex).length(isLeap)
-                                        val firstDateOfMonth = LocalDate.of(targetYear, monthIndex, 1)
-                                        val firstDayOfWeek = firstDateOfMonth.dayOfWeek.value // 1 (Mon) - 7 (Sun)
+                                        val daysInMonth =
+                                            java.time.Month.of(monthIndex).length(isLeap)
+                                        val firstDateOfMonth =
+                                            LocalDate.of(targetYear, monthIndex, 1)
+                                        val firstDayOfWeek =
+                                            firstDateOfMonth.dayOfWeek.value // 1 (Mon) - 7 (Sun)
 
                                         Column(
                                             modifier = Modifier.weight(1f),
@@ -795,10 +887,15 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                                 text = "${monthIndex}月",
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(bottom = 6.dp, start = 2.dp)
+                                                modifier = Modifier.padding(
+                                                    bottom = 6.dp,
+                                                    start = 2.dp
+                                                )
                                             )
                                             // Draw month mini calendar map
-                                            val weeks = Math.ceil((daysInMonth + firstDayOfWeek - 1) / 7.0).toInt()
+                                            val weeks =
+                                                Math.ceil((daysInMonth + firstDayOfWeek - 1) / 7.0)
+                                                    .toInt()
                                             for (w in 0 until 6) { // Draw exactly 6 rows to keep all month grids equal height
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
@@ -808,8 +905,13 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                                         val dayIndex = w * 7 + d
                                                         val dateDay = dayIndex - firstDayOfWeek + 1
                                                         if (dateDay in 1..daysInMonth) {
-                                                            val currentDate = LocalDate.of(targetYear, monthIndex, dateDay)
-                                                            val cellColor = if (billDates.contains(currentDate)) activeColor else inactiveColor
+                                                            val currentDate = LocalDate.of(
+                                                                targetYear,
+                                                                monthIndex,
+                                                                dateDay
+                                                            )
+                                                            val cellColor =
+                                                                if (billDates.contains(currentDate)) activeColor else inactiveColor
                                                             Box(
                                                                 modifier = Modifier
                                                                     .weight(1f)
@@ -865,7 +967,10 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
                     val maxAmount = remember(allBills) {
                         yearsList.maxOfOrNull { year ->
-                            val bills = allBills.filter { Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate().year == year }
+                            val bills = allBills.filter {
+                                Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
+                                    .toLocalDate().year == year
+                            }
                             val e = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
                             val i = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
                             maxOf(e, i)
@@ -887,21 +992,36 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                         reverseLayout = true
                     ) {
                         items(yearsList) { year ->
-                            val bills = allBills.filter { Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault()).toLocalDate().year == year }
-                            val expense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                            val income = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                            val bills = allBills.filter {
+                                Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
+                                    .toLocalDate().year == year
+                            }
+                            val expense =
+                                bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                            val income =
+                                bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
 
-                            val expFraction = if (startChartAnimation && expense > 0) (expense / maxAmount).toFloat().coerceAtLeast(0.02f) else 0f
-                            val incFraction = if (startChartAnimation && income > 0) (income / maxAmount).toFloat().coerceAtLeast(0.02f) else 0f
+                            val expFraction =
+                                if (startChartAnimation && expense > 0) (expense / maxAmount).toFloat()
+                                    .coerceAtLeast(0.02f) else 0f
+                            val incFraction =
+                                if (startChartAnimation && income > 0) (income / maxAmount).toFloat()
+                                    .coerceAtLeast(0.02f) else 0f
 
                             val expAnim by animateFloatAsState(
                                 targetValue = expFraction,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                ),
                                 label = "ExpAnim"
                             )
                             val incAnim by animateFloatAsState(
                                 targetValue = incFraction,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                ),
                                 label = "IncAnim"
                             )
 
@@ -929,7 +1049,12 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                     ) {
                                         if (expense > 0) {
                                             Text(
-                                                text = if (expense % 1.0 == 0.0) expense.toInt().toString() else String.format(Locale.getDefault(), "%.1f", expense),
+                                                text = if (expense % 1.0 == 0.0) expense.toInt()
+                                                    .toString() else String.format(
+                                                    Locale.getDefault(),
+                                                    "%.1f",
+                                                    expense
+                                                ),
                                                 fontSize = 9.sp,
                                                 color = Color.Gray,
                                                 modifier = Modifier.wrapContentWidth(unbounded = true)
@@ -940,7 +1065,13 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .fillMaxHeight(expAnim)
-                                                .background(Color(0xFFF44336), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                                .background(
+                                                    Color(0xFFF44336),
+                                                    RoundedCornerShape(
+                                                        topStart = 4.dp,
+                                                        topEnd = 4.dp
+                                                    )
+                                                )
                                         )
                                     }
 
@@ -954,7 +1085,12 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                     ) {
                                         if (income > 0) {
                                             Text(
-                                                text = if (income % 1.0 == 0.0) income.toInt().toString() else String.format(Locale.getDefault(), "%.1f", income),
+                                                text = if (income % 1.0 == 0.0) income.toInt()
+                                                    .toString() else String.format(
+                                                    Locale.getDefault(),
+                                                    "%.1f",
+                                                    income
+                                                ),
                                                 fontSize = 9.sp,
                                                 color = Color.Gray,
                                                 modifier = Modifier.wrapContentWidth(unbounded = true)
@@ -965,7 +1101,13 @@ fun YearlyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .fillMaxHeight(incAnim)
-                                                .background(Color(0xFF4CAF50), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                                .background(
+                                                    Color(0xFF4CAF50),
+                                                    RoundedCornerShape(
+                                                        topStart = 4.dp,
+                                                        topEnd = 4.dp
+                                                    )
+                                                )
                                         )
                                     }
                                 }
