@@ -32,4 +32,7 @@ interface QBillDao {
 
     @Query("SELECT * FROM QBillEntity WHERE id = :id")
     suspend fun getBillById(id: Long): QBillEntity?
+
+    @Query("SELECT * FROM QBillEntity WHERE `wallet_type` = :type ORDER BY `创建时间` DESC")
+    fun getBillsByWalletType(type: qzwx.app.module_data.entity.WalletType): Flow<List<QBillEntity>>
 }

@@ -7,17 +7,22 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import qzwx.app.module_data.dao.QWalletDao
 import qzwx.app.module_data.entity.QWalletEntity
 import qzwx.app.module_data.entity.WalletType
+import qzwx.app.module_data.entity.QBillEntity
+import qzwx.app.module_data.entity.BillType
+import qzwx.app.module_data.dao.QBillDao
 import javax.inject.Inject
 
 @HiltViewModel
 class SharedBillViewModel @Inject constructor(
-    private val walletDao: QWalletDao
+    private val walletDao: QWalletDao,
+    private val billDao: QBillDao
 ) : ViewModel() {
 
     private val walletInitMutex = Mutex()
@@ -105,4 +110,22 @@ class SharedBillViewModel @Inject constructor(
         }
     }
 
+    fun getBillsByWallet(type: WalletType): Flow<List<QBillEntity>> = billDao.getBillsByWalletType(type)
+
+    fun applyBillToWallet(bill: QBillEntity, reverse: Boolean = false) {
+        viewModelScope.launch {
+            val wallet = walletDao.getWalletByType(bill.walletType) ?: return@launch
+
+            val multiplier = if (reverse) -1 else 1
+            val isIncome = (bill.type == BillType.INCOME)
+
+            val delta = if (isIncome) {
+                bill.amount * multiplier
+            } else {
+                -bill.amount * multiplier
+            }
+
+            walletDao.updateWallet(wallet.copy(balance = wallet.balance + delta))
+        }
+    }
 }
