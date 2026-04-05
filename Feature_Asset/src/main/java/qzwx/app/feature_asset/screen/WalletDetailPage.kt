@@ -1,45 +1,25 @@
 package qzwx.app.feature_asset.screen
 
 import android.annotation.SuppressLint
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import androidx.activity.ComponentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import qzwx.app.feature_asset.R
 import qzwx.app.module_data.entity.QWalletEntity
@@ -63,7 +43,15 @@ fun WalletDetailPage(
     val dbWallet = wallets.firstOrNull { it.type == walletType }
     val wallet = dbWallet ?: QWalletEntity(type = walletType, balance = initialBalance)
 
-    var editedText by remember(walletTypeName) { mutableStateOf(String.format(Locale.US, "%.2f", initialBalance)) }
+    var editedText by remember(walletTypeName) {
+        mutableStateOf(
+            String.format(
+                Locale.US,
+                "%.2f",
+                initialBalance
+            )
+        )
+    }
     var isEditedByUser by remember(walletTypeName) { mutableStateOf(false) }
     var isDefault by remember(walletTypeName) { mutableStateOf(wallet.isDefault) }
 
@@ -85,13 +73,42 @@ fun WalletDetailPage(
     val parsedBalance = editedText.toDoubleOrNull()
     val isValidInput = editedText.isNotBlank() && parsedBalance != null && parsedBalance >= 0.0
 
+    var isExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = walletType.displayName) },
+                title = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = walletType.toDrawableRes()),
+                            contentDescription = walletType.displayName,
+                            modifier = Modifier.height(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = walletType.displayName,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                },
                 navigationIcon = {
-                    TextButton(onClick = onBackClick) {
-                        Text("返回")
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* 搜索预留 */ }) {
+                        Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
                     }
                 }
             )
@@ -104,19 +121,81 @@ fun WalletDetailPage(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = { isExpanded = !isExpanded })
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Image(
-                        painter = painterResource(id = walletType.toDrawableRes()),
-                        contentDescription = walletType.displayName,
-                        modifier = Modifier.height(32.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("当前余额", style = MaterialTheme.typography.labelLarge)
+                        IconButton(
+                            onClick = { isExpanded = !isExpanded },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = "展开"
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("当前余额", style = MaterialTheme.typography.labelLarge)
                     Text(
                         text = formatAmount(wallet.balance),
                         style = MaterialTheme.typography.headlineMedium
                     )
+
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("本月收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("本月支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("本周收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("本周支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("总收入", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                            Column {
+                                Text("总支出", style = MaterialTheme.typography.labelMedium)
+                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -154,22 +233,33 @@ fun WalletDetailPage(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Checkbox(
+                        Text("设为默认支付方式")
+                        Switch(
                             checked = isDefault,
                             onCheckedChange = {
                                 isDefault = it
                                 isEditedByUser = true
-                            }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF4CAF50), // 绿色
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.LightGray // 灰色
+                            )
                         )
-                        Text("设为默认支付方式 (✅)")
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = {
-                            viewModel.updateWalletBalance(walletType, parsedBalance ?: 0.0, isDefault) {
+                            viewModel.updateWalletBalance(
+                                walletType,
+                                parsedBalance ?: 0.0,
+                                isDefault
+                            ) {
                                 // 模拟设为默认支出的接口操作等
                                 onBackClick()
                             }
