@@ -1,5 +1,6 @@
-package qzwx.app.feature_home.screen
+package qzwx.app.module_ui.screen
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -17,7 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
-import qzwx.app.feature_home.viewmodel.HomePage_VM
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_ui.components.Shared_BillDayGroup
 import qzwx.app.module_ui.nav3.UIRoute
@@ -26,13 +27,20 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.platform.LocalContext
+
+@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchPage(
-    viewModel: HomePage_VM = hiltViewModel(),
-    backStack: NavBackStack<NavKey>
+fun SharedSearchPage(
+    backStack: NavBackStack<NavKey>,
+    walletTypeName: String? = null
 ) {
-    val allBills by viewModel.getAllBills().collectAsState(initial = emptyList())
+    val activity = LocalContext.current as ComponentActivity
+    val viewModel: SharedBillViewModel = hiltViewModel(activity)
+
+    val allBills by viewModel.allBills.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     // Date Range state
@@ -48,9 +56,16 @@ fun SearchPage(
         searchQuery,
         allBills,
         dateRangePickerState.selectedStartDateMillis,
-        dateRangePickerState.selectedEndDateMillis
+        dateRangePickerState.selectedEndDateMillis,
+        walletTypeName
     ) {
         allBills.filter { bill ->
+            val matchesWallet = if (walletTypeName != null) {
+                bill.walletType.name == walletTypeName
+            } else {
+                true
+            }
+
             val matchesQuery = if (searchQuery.isNotBlank()) {
                 bill.remark?.contains(searchQuery, ignoreCase = true) == true ||
                         bill.category.contains(searchQuery, ignoreCase = true)
@@ -77,7 +92,7 @@ fun SearchPage(
                 true
             }
 
-            matchesQuery && matchesDate
+            matchesWallet && matchesQuery && matchesDate
         }
     }
 
@@ -139,6 +154,7 @@ fun SearchPage(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -166,6 +182,7 @@ fun SearchPage(
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     billsByDate.forEach { (date, dailyBills) ->
+
                         item {
                             val dateStr = "${date.monthValue}月${date.dayOfMonth}日"
                             val dayOfWeekStr = when (date.dayOfWeek.value) {
@@ -210,6 +227,7 @@ fun SearchPage(
                                     }
                                 },
                                 onItemClick = { clickedBill ->
+
                                     backStack.add(UIRoute.BillDetail(clickedBill))
                                 }
                             )

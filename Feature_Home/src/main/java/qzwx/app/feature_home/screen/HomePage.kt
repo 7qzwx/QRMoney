@@ -84,7 +84,7 @@ fun HomePage(
         topBar = {
             Home_TopBar(
                 scrollBehavior = scrollBehavior,
-                onSearchClick = { backStack.add(HomeRoute.Search) }
+                onSearchClick = { backStack.add(qzwx.app.module_ui.nav3.UIRoute.Search()) }
             )
         },
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑

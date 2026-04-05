@@ -192,7 +192,7 @@ fun WalletDetailPage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* 搜索预留 */ }) {
+                    IconButton(onClick = { backStack?.add(qzwx.app.module_ui.nav3.UIRoute.Search(walletType.name)) }) {
                         Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
                     }
                 }
