@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,16 +73,6 @@ fun AssetsPage(
             .sumOf { it.amount }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("资产") },
-                actions = {
-                    IconButton(onClick = { backStack.add(qzwx.app.module_ui.nav3.UIRoute.Search()) }) {
-                        Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
-                    }
-                }
-            )
-        }
     ) { innerPadding ->
         Column(
             modifier = Modifier

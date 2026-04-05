@@ -35,11 +35,17 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
+import android.annotation.SuppressLint
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.platform.LocalContext
+
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun CalendarPage(
-    viewModel: Calendar_VM = hiltViewModel(),
     backStack: NavBackStack<NavKey>
 ) {
+    val activity = LocalContext.current as ComponentActivity
+    val viewModel: Calendar_VM = hiltViewModel(activity)
     val bills by viewModel.bills.collectAsState()
 
     val currentMonth = remember { YearMonth.now() }
@@ -129,7 +135,7 @@ fun CalendarPage(
 
             // 日历主体
             HorizontalCalendar(
-                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                modifier = Modifier.background(MaterialTheme.colorScheme.background),
                 state = state,
                 dayContent = { day ->
                     // 过滤出当天的账单

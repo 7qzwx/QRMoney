@@ -159,7 +159,7 @@ fun CalendarDayCell(
 fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
     Row(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .background(MaterialTheme.colorScheme.background)
             .fillMaxWidth()
             .padding(bottom = 8.dp)
     ) {
