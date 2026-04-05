@@ -4,18 +4,8 @@ import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,11 +22,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import qzwx.app.feature_asset.R
+import qzwx.app.feature_asset.components.WalletTypeHelper
+import qzwx.app.feature_asset.components.WalletTypeHelper.formatAmount
 import qzwx.app.module_data.entity.QWalletEntity
-import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 import java.util.Locale
+
+import qzwx.app.module_ui.nav3.UIRoute
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.launch
+import qzwx.app.module_ui.components.Shared_AddNewBill
+import kotlinx.coroutines.launch
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import qzwx.app.module_ui.components.Shared_SnakBar
+import qzwx.app.module_ui.components.Shared_SnakBar
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,11 +46,12 @@ fun WalletDetailPage(
     walletTypeName: String,
     initialBalance: Double = 0.0,
     onBackClick: () -> Unit,
+    backStack: NavBackStack<NavKey>? = null
 ) {
     val activity = LocalContext.current as ComponentActivity
     val viewModel: SharedBillViewModel = hiltViewModel(activity)
 
-    val walletType = parseWalletType(walletTypeName)
+    val walletType = WalletTypeHelper.parseWalletType(walletTypeName)
     val wallets by viewModel.wallets.collectAsState()
     val dbWallet = wallets.firstOrNull { it.type == walletType }
     val wallet = dbWallet ?: QWalletEntity(type = walletType, balance = initialBalance)
@@ -97,7 +99,68 @@ fun WalletDetailPage(
         }.toSortedMap(compareByDescending { it })
     }
 
+    val now = java.time.LocalDateTime.now()
+    val startOfMonth =
+        now.withDayOfMonth(1).with(java.time.LocalTime.MIN).atZone(java.time.ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+    val startOfWeek = now.with(java.time.DayOfWeek.MONDAY).with(java.time.LocalTime.MIN)
+        .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    val totalIncome = walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME }
+        .sumOf { it.amount }
+    val totalExpense =
+        walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE }
+            .sumOf { it.amount }
+
+    val monthIncome =
+        walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfMonth }
+            .sumOf { it.amount }
+    val monthExpense =
+        walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfMonth }
+            .sumOf { it.amount }
+
+    val weekIncome =
+        walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfWeek }
+            .sumOf { it.amount }
+    val weekExpense = walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }.sumOf { it.amount }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var draftBill by remember { mutableStateOf<qzwx.app.module_data.entity.QBillEntity?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    if (showBottomSheet) {
+        Shared_AddNewBill(
+            initialBill = draftBill,
+            onDismissRequest = {
+                showBottomSheet = false
+            },
+            onSaveRequest = { bill ->
+                scope.launch {
+                    draftBill = bill
+                    val insertedId = viewModel.insertAndReturnId(bill)
+
+                    showBottomSheet = false
+
+                    val result = snackbarHostState.showSnackbar(
+                        message = "已更新账单",
+                        actionLabel = "撤销",
+                        duration = SnackbarDuration.Short
+                    )
+
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.deleteBill(bill.copy(id = insertedId))
+                        showBottomSheet = true
+                    } else {
+                        draftBill = null
+                    }
+                }
+            }
+        )
+    }
+
     Scaffold(
+        snackbarHost = { Shared_SnakBar(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -109,7 +172,7 @@ fun WalletDetailPage(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Image(
-                            painter = painterResource(id = walletType.toDrawableRes()),
+                            painter = painterResource(id = WalletTypeHelper.toDrawableRes(walletType)),
                             contentDescription = walletType.displayName,
                             modifier = Modifier.height(24.dp)
                         )
@@ -139,10 +202,9 @@ fun WalletDetailPage(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
+            contentPadding = innerPadding,
         ) {
             item {
                 Card(
@@ -183,11 +245,19 @@ fun WalletDetailPage(
                             ) {
                                 Column {
                                     Text("本月收入", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(monthIncome),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color(0xFF4CAF50)
+                                    )
                                 }
                                 Column {
                                     Text("本月支出", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(monthExpense),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.Red
+                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
@@ -197,11 +267,19 @@ fun WalletDetailPage(
                             ) {
                                 Column {
                                     Text("本周收入", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(weekIncome),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color(0xFF4CAF50)
+                                    )
                                 }
                                 Column {
                                     Text("本周支出", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(weekExpense),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.Red
+                                    )
                                 }
                             }
                         } else {
@@ -212,11 +290,19 @@ fun WalletDetailPage(
                             ) {
                                 Column {
                                     Text("总收入", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(totalIncome),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color(0xFF4CAF50)
+                                    )
                                 }
                                 Column {
                                     Text("总支出", style = MaterialTheme.typography.labelMedium)
-                                    Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        formatAmount(totalExpense),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = Color.Red
+                                    )
                                 }
                             }
                         }
@@ -299,14 +385,6 @@ fun WalletDetailPage(
             }
 
             if (walletBills.isNotEmpty()) {
-                item {
-                    Text(
-                        "该支付方式账单",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
                 billsByDate.forEach { (date, dailyBills) ->
                     item {
                         val dateStr = "${date.monthValue}月${date.dayOfMonth}日"
@@ -320,8 +398,12 @@ fun WalletDetailPage(
                             else -> "星期日"
                         }
 
-                        val expenseTotal = dailyBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE }.sumOf { it.amount }
-                        val incomeTotal = dailyBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME }.sumOf { it.amount }
+                        val expenseTotal =
+                            dailyBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE }
+                                .sumOf { it.amount }
+                        val incomeTotal =
+                            dailyBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME }
+                                .sumOf { it.amount }
 
                         qzwx.app.module_ui.components.Shared_BillDayGroup(
                             dateStr = dateStr,
@@ -329,9 +411,26 @@ fun WalletDetailPage(
                             expenseTotal = expenseTotal,
                             incomeTotal = incomeTotal,
                             bills = dailyBills,
-                            onEditBill = { /* Readonly fallback mode */ },
-                            onDeleteBill = { /* Disable in wallet detail to simplify flow, or link */ },
-                            onItemClick = { /* Can implement intent */ }
+                            onEditBill = { billToEdit ->
+                                draftBill = billToEdit
+                                showBottomSheet = true
+                            },
+                            onDeleteBill = { billToDelete ->
+                                scope.launch {
+                                    viewModel.deleteBill(billToDelete)
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "已删除账单",
+                                        actionLabel = "撤销",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.insertBill(billToDelete)
+                                    }
+                                }
+                            },
+                            onItemClick = { clickedBill ->
+                                backStack?.add(UIRoute.BillDetail(clickedBill))
+                            }
                         )
                     }
                 }
@@ -340,21 +439,3 @@ fun WalletDetailPage(
     }
 }
 
-private fun formatAmount(amount: Double): String {
-    return String.format(Locale.CHINA, "¥ %,.2f", amount)
-}
-
-private fun parseWalletType(walletTypeName: String): WalletType {
-    return runCatching { WalletType.valueOf(walletTypeName) }
-        .getOrElse { WalletType.ALIPAY }
-}
-
-private fun WalletType.toDrawableRes(): Int {
-    return when (this) {
-        WalletType.CASH -> R.drawable.paycash
-        WalletType.ALIPAY -> R.drawable.payzfb
-        WalletType.WECHAT -> R.drawable.paywx
-        WalletType.BANK_CARD -> R.drawable.paycard
-        WalletType.OTHER -> R.drawable.payother
-    }
-}

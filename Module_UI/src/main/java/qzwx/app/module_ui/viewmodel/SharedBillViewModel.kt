@@ -36,6 +36,13 @@ class SharedBillViewModel @Inject constructor(
             emptyList()
         )
 
+    val allBills: StateFlow<List<QBillEntity>> = billDao.getAllBills()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
     init {
         ensureWalletsInitialized()
     }
@@ -126,6 +133,31 @@ class SharedBillViewModel @Inject constructor(
             }
 
             walletDao.updateWallet(wallet.copy(balance = wallet.balance + delta))
+        }
+    }
+
+    suspend fun insertAndReturnId(bill: QBillEntity): Long {
+        val existingBill = if (bill.id != 0L) billDao.getBillById(bill.id) else null
+
+        if (existingBill != null) {
+            applyBillToWallet(existingBill, reverse = true)
+        }
+
+        val newId = billDao.insertBill(bill)
+        applyBillToWallet(bill.copy(id = newId), reverse = false)
+        return newId
+    }
+
+    fun insertBill(bill: QBillEntity) {
+        viewModelScope.launch {
+            insertAndReturnId(bill)
+        }
+    }
+
+    fun deleteBill(bill: QBillEntity) {
+        viewModelScope.launch {
+            billDao.deleteBill(bill)
+            applyBillToWallet(bill, reverse = true)
         }
     }
 }

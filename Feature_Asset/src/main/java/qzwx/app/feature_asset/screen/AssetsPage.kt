@@ -2,7 +2,6 @@ package qzwx.app.feature_asset.screen
 
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,19 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import qzwx.app.feature_asset.R
+import qzwx.app.feature_asset.components.WalletBalanceRow
+import qzwx.app.feature_asset.components.WalletTypeHelper.formatAmount
 import qzwx.app.feature_asset.nav3.AssetRoute
 import qzwx.app.module_data.entity.QWalletEntity
 import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.viewmodel.SharedBillViewModel
-import java.util.Locale
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,7 +41,36 @@ fun AssetsPage(
     }
     val totalAssets = displayWallets.sumOf { it.balance }
 
+    val allBills by viewModel.allBills.collectAsState()
+
     var isExpanded by remember { mutableStateOf(false) }
+
+    // Bill aggregations
+    val now = java.time.LocalDateTime.now()
+    val startOfMonth =
+        now.withDayOfMonth(1).with(java.time.LocalTime.MIN).atZone(java.time.ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+    val startOfWeek = now.with(java.time.DayOfWeek.MONDAY).with(java.time.LocalTime.MIN)
+        .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    val totalIncome = allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME }
+        .sumOf { it.amount }
+    val totalExpense = allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE }
+        .sumOf { it.amount }
+
+    val monthIncome =
+        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfMonth }
+            .sumOf { it.amount }
+    val monthExpense =
+        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfMonth }
+            .sumOf { it.amount }
+
+    val weekIncome =
+        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfWeek }
+            .sumOf { it.amount }
+    val weekExpense =
+        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }
+            .sumOf { it.amount }
 
     Scaffold() { innerPadding ->
         Column(
@@ -98,11 +126,19 @@ fun AssetsPage(
                         ) {
                             Column {
                                 Text("本月收入", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(monthIncome),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color(0xFF4CAF50)
+                                )
                             }
                             Column {
                                 Text("本月支出", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(monthExpense),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.Red
+                                )
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -112,11 +148,19 @@ fun AssetsPage(
                         ) {
                             Column {
                                 Text("本周收入", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(weekIncome),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color(0xFF4CAF50)
+                                )
                             }
                             Column {
                                 Text("本周支出", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(weekExpense),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.Red
+                                )
                             }
                         }
                     } else {
@@ -128,11 +172,19 @@ fun AssetsPage(
                         ) {
                             Column {
                                 Text("总收入", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(totalIncome),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color(0xFF4CAF50)
+                                )
                             }
                             Column {
                                 Text("总支出", style = MaterialTheme.typography.labelMedium)
-                                Text("¥ 0.00", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    formatAmount(totalExpense),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.Red
+                                )
                             }
                         }
                     }
@@ -167,54 +219,3 @@ fun AssetsPage(
     }
 }
 
-@Composable
-private fun WalletBalanceRow(
-    wallet: QWalletEntity,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = wallet.type.toDrawableRes()),
-            contentDescription = wallet.type.displayName,
-            modifier = Modifier.height(22.dp)
-        )
-        Text(
-            text = wallet.type.displayName,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 10.dp),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        if (wallet.isDefault) {
-            Text(
-                text = "✅",
-                modifier = Modifier.padding(end = 8.dp)
-            )
-        }
-        Text(
-            text = formatAmount(wallet.balance),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-private fun formatAmount(amount: Double): String {
-    return String.format(Locale.CHINA, "¥ %,.2f", amount)
-}
-
-private fun WalletType.toDrawableRes(): Int {
-    return when (this) {
-        WalletType.CASH -> R.drawable.paycash
-        WalletType.ALIPAY -> R.drawable.payzfb
-        WalletType.WECHAT -> R.drawable.paywx
-        WalletType.BANK_CARD -> R.drawable.paycard
-        WalletType.OTHER -> R.drawable.payother
-    }
-}

@@ -9,23 +9,22 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_ui.data.billCategoryList
 import qzwx.app.module_ui.data.incomeCategoryList
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import qzwx.app.module_ui.viewmodel.SharedBillViewModel
-import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 fun Shared_BillItem(
@@ -135,10 +134,11 @@ fun Shared_BillDayGroup(
     bills: List<QBillEntity>,
     onEditBill: (QBillEntity) -> Unit = {},
     onDeleteBill: (QBillEntity) -> Unit = {},
-    onItemClick: (QBillEntity) -> Unit = {}
+    onItemClick: (QBillEntity) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
 

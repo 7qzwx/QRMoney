@@ -12,7 +12,8 @@ fun EntryProviderScope<NavKey>.AssetRouteBuilder(backStack: NavBackStack<NavKey>
         WalletDetailPage(
             walletTypeName = route.walletTypeName,
             initialBalance = route.initialBalance,
-            onBackClick = { backStack.removeLastOrNull() }
+            onBackClick = { backStack.removeLastOrNull() },
+            backStack = backStack
         )
     }
 
