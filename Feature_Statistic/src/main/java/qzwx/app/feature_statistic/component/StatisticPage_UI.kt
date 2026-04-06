@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -63,10 +64,17 @@ fun DayOfWeek.toChinese(): String = when (this) {
     DayOfWeek.SUNDAY -> "周日"
 }
 
-
 @Composable
-fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
+fun DailyStatisticView(
+    viewModel: StatisticPage_VM = hiltViewModel(),
+    backStack: NavBackStack<NavKey>? = null
+) {
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
+
+    val scrollState = rememberScrollState(initial = viewModel.dailyScrollPosition)
+    LaunchedEffect(scrollState.value) {
+        viewModel.dailyScrollPosition = scrollState.value
+    }
 
     var isExpense by remember { mutableStateOf(true) }
     var isLast7Days by remember { mutableStateOf(true) }
@@ -79,7 +87,7 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .padding(vertical = 16.dp)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
     ) {
         androidx.compose.material3.Card(
             modifier = Modifier
@@ -392,198 +400,34 @@ fun DailyStatisticView(viewModel: StatisticPage_VM = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        var isPiePercentageMode by remember { mutableStateOf(true) }
-        var isPieExpanded by remember { mutableStateOf(true) }
-        var isPieExpense by remember { mutableStateOf(true) }
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable(onClick = {
-                                isPiePercentageMode = !isPiePercentageMode
-                            })
-                        ) {
-                            Text(
-                                text = "分类占比",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Icon(
-                                imageVector = if (isPiePercentageMode) Icons.Default.SwipeUp else Icons.Default.SwipeDown,
-                                contentDescription = "Swap Mode",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .padding(0.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { isPieExpanded = !isPieExpanded },
-                        ) {
-                            Icon(
-                                imageVector = if (isPieExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Toggle Details",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .padding(0.dp)
-                            )
-                        }
-                    }
-
-                    // Togge
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
-                    ) {
-                        val expenseBgColor by animateColorAsState(
-                            if (isPieExpense) primaryColor else MaterialTheme.colorScheme.surface,
-                            label = "ExpenseBg"
-                        )
-                        val expenseTextColor by animateColorAsState(
-                            if (isPieExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                            label = "ExpenseText"
-                        )
-                        val incomeBgColor by animateColorAsState(
-                            if (!isPieExpense) primaryColor else MaterialTheme.colorScheme.surface,
-                            label = "IncomeBg"
-                        )
-                        val incomeTextColor by animateColorAsState(
-                            if (!isPieExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                            label = "IncomeText"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .background(expenseBgColor)
-                                .clickable { isPieExpense = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "支出",
-                                color = expenseTextColor,
-                                fontWeight = if (isPieExpense) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(incomeBgColor)
-                                .clickable { isPieExpense = false }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "收入",
-                                color = incomeTextColor,
-                                fontWeight = if (!isPieExpense) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                AnimatedVisibility(
-                    visible = isPieExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    val localDates = remember(isLast7Days) {
-                        if (isLast7Days) {
-                            (6 downTo 0).map { LocalDate.now().minusDays(it.toLong()) }
-                        } else {
-                            val monday = LocalDate.now()
-                                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                            (0..6).map { monday.plusDays(it.toLong()) }
-                        }
-                    }
-                    val typeToFilter = if (isPieExpense) BillType.EXPENSE else BillType.INCOME
-
-                    val pieBills = allBills.filter { bill ->
-                        val billDate =
-                            Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                        bill.type == typeToFilter && localDates.contains(billDate)
-                    }
-                    val totalPieAmount = pieBills.sumOf { it.amount }
-                    val categoryGroups = pieBills.groupBy { it.category }
-                        .mapValues { it.value.sumOf { b -> b.amount } }
-                        .toList()
-                        .sortedByDescending { it.second }
-
-                    val colors = listOf(
-                        Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800),
-                        Color(0xFF4CAF50), Color(0xFF9C27B0), Color(0xFF00BCD4),
-                        Color(0xFFFFEB3B), Color(0xFF795548)
-                    )
-
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val amountText1 =
-                                    String.format(Locale.getDefault(), "%.2f", totalPieAmount)
-                                val amountText2 = if (isPieExpense) "总支出" else "总收入"
-
-                                CustomDonutChart(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp),
-                                    data = categoryGroups,
-                                    colors = colors,
-                                    totalAmount = totalPieAmount,
-                                    centerTitle = amountText1,
-                                    centerSubtitle = amountText2,
-                                    isPercentageMode = isPiePercentageMode
-                                )
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "没有记录",
-                                    color = Color.Gray,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    }
-                }
+        val localDates = remember(isLast7Days) {
+            if (isLast7Days) {
+                (6 downTo 0).map { LocalDate.now().minusDays(it.toLong()) }
+            } else {
+                val monday = LocalDate.now()
+                    .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                (0..6).map { monday.plusDays(it.toLong()) }
             }
         }
+
+        val dailyPieBills = allBills.filter { bill ->
+            val billDate =
+                Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            localDates.contains(billDate)
+        }
+
+        qzwx.app.module_ui.components.Shared_CategoryPieChart(
+            bills = dailyPieBills,
+            onCategoryClick = { categoryName, categoryBills ->
+                backStack?.add(
+                    qzwx.app.module_ui.nav3.UIRoute.CategoryBills(
+                        categoryName,
+                        categoryBills
+                    )
+                )
+            }
+        )
     }
 }
 
@@ -636,6 +480,15 @@ fun MonthlyStatisticView(
     val monthlyState by viewModel.monthlyChartState.collectAsState(initial = MonthlyChartState())
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.monthlyListIndex,
+        initialFirstVisibleItemScrollOffset = viewModel.monthlyListOffset
+    )
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        viewModel.monthlyListIndex = listState.firstVisibleItemIndex
+        viewModel.monthlyListOffset = listState.firstVisibleItemScrollOffset
+    }
+
     var isPieChartExpense by remember { mutableStateOf(true) }
 
     var barChartType by remember {
@@ -658,6 +511,7 @@ fun MonthlyStatisticView(
     var selectedPieCategory by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
@@ -919,6 +773,15 @@ fun YearlyStatisticView(
 ) {
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.yearlyListIndex,
+        initialFirstVisibleItemScrollOffset = viewModel.yearlyListOffset
+    )
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        viewModel.yearlyListIndex = listState.firstVisibleItemIndex
+        viewModel.yearlyListOffset = listState.firstVisibleItemScrollOffset
+    }
+
     var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
     var isHeatmapExpense by remember { mutableStateOf(true) }
     var isYearlyPieChartExpense by remember { mutableStateOf(true) }
@@ -951,6 +814,7 @@ fun YearlyStatisticView(
     val yearBalance = yearIncome - yearExpense
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .background(backgoundColor)
@@ -1419,6 +1283,15 @@ fun CustomStatisticView(
 ) {
     val allBills by viewModel.allBills.collectAsState(initial = emptyList())
 
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.customListIndex,
+        initialFirstVisibleItemScrollOffset = viewModel.customListOffset
+    )
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        viewModel.customListIndex = listState.firstVisibleItemIndex
+        viewModel.customListOffset = listState.firstVisibleItemScrollOffset
+    }
+
     val calendarState = rememberUseCaseState()
 
     var startDate by remember { mutableStateOf(LocalDate.now().minusDays(30)) }
@@ -1444,6 +1317,7 @@ fun CustomStatisticView(
     )
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
@@ -1644,149 +1518,3 @@ fun CustomStatisticView(
     }
 }
 
-@Composable
-fun CustomDonutChart(
-    modifier: Modifier = Modifier,
-    data: List<Pair<String, Double>>,
-    colors: List<Color>,
-    totalAmount: Double,
-    centerTitle: String,
-    centerSubtitle: String,
-    isPercentageMode: Boolean = true
-) {
-    val animateRotation = remember { androidx.compose.animation.core.Animatable(0f) }
-
-    // Restart animation whenever the list of bills (or expense/income mode) changes.
-    LaunchedEffect(data) {
-        animateRotation.snapTo(0f)
-        animateRotation.animateTo(
-            targetValue = 360f,
-            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
-        )
-    }
-
-    // Add another alpha animation for indicator lines and texts that appears after pie is drawn
-    val animateAlpha by animateFloatAsState(
-        targetValue = if (animateRotation.value >= 360f) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
-        label = "donut_alpha"
-    )
-
-    val textMeasurer = rememberTextMeasurer()
-    val centerTitleStyle = androidx.compose.ui.text.TextStyle(
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurface
-    )
-    val centerSubtitleStyle = androidx.compose.ui.text.TextStyle(
-        fontSize = 12.sp,
-        color = Color.Gray
-    )
-
-    Canvas(modifier = modifier) {
-        val sweepAngles = data.map { 360f * (it.second / totalAmount).toFloat() }
-        val canvasSize = size.minDimension
-        val center = Offset(size.width / 2, size.height / 2)
-        // Shrunk chart pie size slightly to prevent indicators from visually overflowing
-        val radius = canvasSize / 2 - 60.dp.toPx()
-        val strokeWidth = 14.dp.toPx()
-
-        var startAngle = -90f
-
-        data.forEachIndexed { index, pair ->
-            val sweepAngle = sweepAngles[index] * (animateRotation.value / 360f)
-            val color = colors[index % colors.size]
-
-            drawArc(
-                color = color,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                style = Stroke(width = strokeWidth),
-                size = Size(radius * 2, radius * 2),
-                topLeft = Offset(center.x - radius, center.y - radius)
-            )
-
-            if (animateAlpha > 0f) {
-                // Draw indicating lines and text with opacity
-                val angleInRadians = (startAngle + sweepAngle / 2) * (Math.PI / 180f)
-                val lineLength1 = 15.dp.toPx()
-                val lineLength2 = 25.dp.toPx()
-
-                val x1 = center.x + (radius + strokeWidth / 2) * cos(angleInRadians).toFloat()
-                val y1 = center.y + (radius + strokeWidth / 2) * sin(angleInRadians).toFloat()
-
-                val x2 =
-                    center.x + (radius + strokeWidth / 2 + lineLength1) * cos(angleInRadians).toFloat()
-                val y2 =
-                    center.y + (radius + strokeWidth / 2 + lineLength1) * sin(angleInRadians).toFloat()
-
-                val isLeft = x2 < center.x
-                val x3 = if (isLeft) x2 - lineLength2 else x2 + lineLength2
-                val y3 = y2
-
-                drawLine(
-                    color = Color.LightGray,
-                    start = Offset(x1, y1),
-                    end = Offset(x2, y2),
-                    strokeWidth = 2f,
-                    alpha = animateAlpha
-                )
-                drawLine(
-                    color = Color.LightGray,
-                    start = Offset(x2, y2),
-                    end = Offset(x3, y3),
-                    strokeWidth = 2f,
-                    alpha = animateAlpha
-                )
-
-                val infoText = if (isPercentageMode) {
-                    val percentage = (pair.second / totalAmount) * 100
-                    "${pair.first} ${String.format(Locale.getDefault(), "%.1f", percentage)}%"
-                } else {
-                    "${pair.first} ${String.format(Locale.getDefault(), "%.2f", pair.second)}"
-                }
-
-                val textLayoutResult = textMeasurer.measure(
-                    text = infoText,
-                    style = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = color.copy(alpha = animateAlpha))
-                )
-
-                val textLeft =
-                    if (isLeft) x3 - textLayoutResult.size.width - 4.dp.toPx() else x3 + 4.dp.toPx()
-                drawText(
-                    textLayoutResult = textLayoutResult,
-                    topLeft = Offset(textLeft, y3 - textLayoutResult.size.height / 2f)
-                )
-            }
-
-            startAngle += sweepAngle
-        }
-
-        // Draw center text
-        if (animateAlpha > 0f) {
-            val titleLayoutResult =
-                textMeasurer.measure(text = centerTitle, style = centerTitleStyle.copy(color = centerTitleStyle.color.copy(alpha = animateAlpha)))
-            val subtitleLayoutResult =
-                textMeasurer.measure(text = centerSubtitle, style = centerSubtitleStyle.copy(color = centerSubtitleStyle.color.copy(alpha = animateAlpha)))
-
-            val totalHeight =
-                titleLayoutResult.size.height + subtitleLayoutResult.size.height + 4.dp.toPx()
-
-            drawText(
-                textLayoutResult = titleLayoutResult,
-                topLeft = Offset(
-                    center.x - titleLayoutResult.size.width / 2f,
-                    center.y - totalHeight / 2f
-                )
-            )
-            drawText(
-                textLayoutResult = subtitleLayoutResult,
-                topLeft = Offset(
-                    center.x - subtitleLayoutResult.size.width / 2f,
-                    center.y - totalHeight / 2f + titleLayoutResult.size.height + 4.dp.toPx()
-                )
-            )
-        }
-    }
-}

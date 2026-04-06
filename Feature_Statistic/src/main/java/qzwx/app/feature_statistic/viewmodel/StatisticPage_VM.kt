@@ -1,5 +1,7 @@
 package qzwx.app.feature_statistic.viewmodel
 
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,17 @@ data class MonthlyChartState(
 class StatisticPage_VM @Inject constructor(
     private val repository: StatisticPage_RT
 ) : ViewModel() {
+
+    // Persistent UI States for StatisticPage
+    var dailyScrollPosition = 0
+    var monthlyListIndex = 0
+    var monthlyListOffset = 0
+    var yearlyListIndex = 0
+    var yearlyListOffset = 0
+    var customListIndex = 0
+    var customListOffset = 0
+    var selectedTab = 0
+
     val allBills: Flow<List<QBillEntity>> = repository.allBills
 
     // User's selected month start date

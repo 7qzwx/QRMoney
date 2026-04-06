@@ -11,7 +11,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,12 +25,27 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
 import qzwx.app.feature_statistic.component.DailyStatisticView
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
+fun StatisticPage(
+    backStack: NavBackStack<NavKey>? = null,
+    viewModel: qzwx.app.feature_statistic.viewmodel.StatisticPage_VM = hiltViewModel()
+) {
     val tabs = listOf("日常", "月统计", "年统计", "自定义")
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val pagerState = rememberPagerState(
+        initialPage = viewModel.selectedTab,
+        pageCount = { tabs.size }
+    )
+
+    // Save tab selection to ViewModel when it changes
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            viewModel.selectedTab = page
+        }
+    }
+
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
@@ -86,7 +103,7 @@ fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
             ) { page ->
                 // 每个页面的内容暂时留白，后续根据具体的tab添加
                 if (page == 0) {
-                   DailyStatisticView()
+                   DailyStatisticView(backStack = backStack)
                 } else if (page == 1) {
                     qzwx.app.feature_statistic.component.MonthlyStatisticView(backStack = backStack)
                 } else if (page == 2) {

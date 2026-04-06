@@ -1,17 +1,27 @@
 package qzwx.app.module_ui.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.SwipeDown
+import androidx.compose.material.icons.filled.SwipeUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,7 +36,15 @@ import ir.ehsannarmani.compose_charts.models.Pie
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_ui.data.billCategoryList
+import qzwx.app.module_ui.data.incomeCategoryList
 import java.util.Locale
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun Shared_CategoryPieChart(
@@ -34,88 +52,128 @@ fun Shared_CategoryPieChart(
     modifier: Modifier = Modifier,
     onCategoryClick: ((String, List<QBillEntity>) -> Unit)? = null
 ) {
-    var isPieChartExpense by remember { mutableStateOf(true) }
-    var selectedPieCategory by remember { mutableStateOf<String?>(null) }
+    var isPiePercentageMode by remember { mutableStateOf(true) }
+    var isPieExpanded by remember { mutableStateOf(false) }
+    var isPieExpense by remember { mutableStateOf(true) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
-    val surfaceColor = MaterialTheme.colorScheme.surface
 
-    Column(modifier = modifier) {
-        // Pie Chart Section Header
-        Row(
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 16.dp)
         ) {
-            Text(text = "分类占比", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-
-            // Toggle for Pie Chart
+            // Header
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val pieExpenseBgColor by animateColorAsState(
-                    if (isPieChartExpense) primaryColor else surfaceColor,
-                    label = "PieExpenseBg"
-                )
-                val pieExpenseTextColor by animateColorAsState(
-                    if (isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                    label = "PieExpenseText"
-                )
-                val pieIncomeBgColor by animateColorAsState(
-                    if (!isPieChartExpense) primaryColor else surfaceColor,
-                    label = "PieIncomeBg"
-                )
-                val pieIncomeTextColor by animateColorAsState(
-                    if (!isPieChartExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
-                    label = "PieIncomeText"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .background(pieExpenseBgColor)
-                        .clickable { isPieChartExpense = true }
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "支出",
-                        color = pieExpenseTextColor,
-                        fontWeight = if (isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 12.sp
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(onClick = {
+                            isPiePercentageMode = !isPiePercentageMode
+                        })
+                    ) {
+                        Text(
+                            text = "分类占比",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Icon(
+                            imageVector = if (isPiePercentageMode) Icons.Default.SwipeUp else Icons.Default.SwipeDown,
+                            contentDescription = "Swap Mode",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .padding(0.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = { isPieExpanded = !isPieExpanded },
+                    ) {
+                        Icon(
+                            imageVector = if (isPieExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Toggle Details",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .padding(0.dp)
+                        )
+                    }
                 }
-                Box(
+
+                // Togge
+                Row(
                     modifier = Modifier
-                        .background(pieIncomeBgColor)
-                        .clickable { isPieChartExpense = false }
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, primaryColor, RoundedCornerShape(8.dp))
                 ) {
-                    Text(
-                        text = "收入",
-                        color = pieIncomeTextColor,
-                        fontWeight = if (!isPieChartExpense) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 12.sp
+                    val expenseBgColor by animateColorAsState(
+                        if (isPieExpense) primaryColor else MaterialTheme.colorScheme.surface,
+                        label = "ExpenseBg"
                     )
+                    val expenseTextColor by animateColorAsState(
+                        if (isPieExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "ExpenseText"
+                    )
+                    val incomeBgColor by animateColorAsState(
+                        if (!isPieExpense) primaryColor else MaterialTheme.colorScheme.surface,
+                        label = "IncomeBg"
+                    )
+                    val incomeTextColor by animateColorAsState(
+                        if (!isPieExpense) MaterialTheme.colorScheme.onPrimary else primaryColor,
+                        label = "IncomeText"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .background(expenseBgColor)
+                            .clickable { isPieExpense = true }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "支出",
+                            color = expenseTextColor,
+                            fontWeight = if (isPieExpense) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(incomeBgColor)
+                            .clickable { isPieExpense = false }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "收入",
+                            color = incomeTextColor,
+                            fontWeight = if (!isPieExpense) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        AnimatedContent(
-            targetState = isPieChartExpense,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
-            },
-            label = "PieChartContentAnim"
-        ) { targetIsPieChartExpense ->
+            val typeToFilter = if (isPieExpense) BillType.EXPENSE else BillType.INCOME
 
-            // Filters base on pure list passed in
             val pieBills = bills.filter { bill ->
-                bill.type == if (targetIsPieChartExpense) BillType.EXPENSE else BillType.INCOME
+                bill.type == typeToFilter
             }
             val totalPieAmount = pieBills.sumOf { it.amount }
             val categoryGroups = pieBills.groupBy { it.category }
@@ -123,196 +181,291 @@ fun Shared_CategoryPieChart(
                 .toList()
                 .sortedByDescending { it.second }
 
-            // Reset selected category if there's no matching group
-            LaunchedEffect(categoryGroups) {
-                if (selectedPieCategory != null && categoryGroups.find { it.first == selectedPieCategory } == null) {
-                    selectedPieCategory = null
-                }
-            }
-
             val colors = listOf(
                 Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800),
                 Color(0xFF4CAF50), Color(0xFF9C27B0), Color(0xFF00BCD4),
                 Color(0xFFFFEB3B), Color(0xFF795548)
             )
 
-            if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (categoryGroups.isNotEmpty() && totalPieAmount > 0) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(300.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
+                        val amountText1 =
+                            String.format(Locale.getDefault(), "%.2f", totalPieAmount)
+                        val amountText2 = if (isPieExpense) "总支出" else "总收入"
+
+                        CustomDonutChart(
                             modifier = Modifier
-                                .weight(1f)
-                                .height(180.dp)
-                        ) {
-                            PieChart(
-                                onPieClick = { pie ->
-                                    selectedPieCategory =
-                                        if (selectedPieCategory == pie.label) null else pie.label
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                                selectedPaddingDegree = 4f,
-                                labelHelperProperties = LabelHelperProperties(enabled = false),
-                                selectedScale = 1.2f,
-                                data = categoryGroups.mapIndexed { index, pair ->
-                                    Pie(
-                                        label = pair.first,
-                                        data = pair.second,
-                                        color = colors[index % colors.size],
-                                        selectedColor = colors[index % colors.size].copy(alpha = 0.5f),
-                                        selected = pair.first == selectedPieCategory
-                                    )
-                                },
-                                style = Pie.Style.Stroke()
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            categoryGroups.forEachIndexed { index, pair ->
-                                val percent = (pair.second / totalPieAmount) * 100
-                                val isPieSelected = pair.first == selectedPieCategory
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(vertical = 4.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isPieSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                                        .clickable {
-                                            selectedPieCategory =
-                                                if (isPieSelected) null else pair.first
-                                        }
-                                        .padding(all = if (isPieSelected) 4.dp else 2.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .background(
-                                                colors[index % colors.size],
-                                                RoundedCornerShape(50)
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "${pair.first} (${
-                                            String.format(
-                                                Locale.getDefault(),
-                                                "%.1f",
-                                                percent
-                                            )
-                                        }%, ¥${
-                                            String.format(
-                                                Locale.getDefault(),
-                                                "%.1f",
-                                                pair.second
-                                            )
-                                        })",
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isPieSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                        }
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            data = categoryGroups,
+                            colors = colors,
+                            totalAmount = totalPieAmount,
+                            centerTitle = amountText1,
+                            centerSubtitle = amountText2,
+                            isPercentageMode = isPiePercentageMode
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                    AnimatedVisibility(
+                        visible = isPieExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
                     ) {
-                        categoryGroups.forEachIndexed { index, pair ->
-                            val percent = (pair.second / totalPieAmount) * 100
-                            val cat = billCategoryList.find { it.name == pair.first }
-                            Row(
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(enabled = onCategoryClick != null) {
-                                        onCategoryClick?.invoke(pair.first, pieBills.filter { it.category == pair.first })
-                                    }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(horizontal = 16.dp)
                             ) {
-                                if (cat != null) {
-                                    Icon(
-                                        imageVector = cat.icon,
-                                        contentDescription = cat.name,
-                                        tint = colors[index % colors.size],
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .background(
-                                                colors[index % colors.size],
-                                                RoundedCornerShape(50)
-                                            )
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
+                                val safeCategoryList = billCategoryList + incomeCategoryList
+                                categoryGroups.forEachIndexed { index, pair ->
+                                    val percent = (pair.second / totalPieAmount) * 100
+                                    val cat = safeCategoryList.find { it.name == pair.first }
                                     Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = pair.first,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "¥${
-                                                String.format(
-                                                    Locale.getDefault(),
-                                                    "%.2f",
-                                                    pair.second
-                                                )
-                                            }", fontSize = 14.sp, fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    LinearProgressIndicator(
-                                        progress = { (percent / 100).toFloat() },
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(8.dp)
-                                            .clip(RoundedCornerShape(4.dp)),
-                                        color = colors[index % colors.size],
-                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${
-                                            String.format(
-                                                Locale.getDefault(),
-                                                "%.1f",
-                                                percent
+                                            .clickable(enabled = onCategoryClick != null) {
+                                                onCategoryClick?.invoke(
+                                                    pair.first,
+                                                    pieBills.filter { it.category == pair.first })
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (cat != null) {
+                                            Icon(
+                                                imageVector = cat.icon,
+                                                contentDescription = cat.name,
+                                                tint = colors[index % colors.size],
+                                                modifier = Modifier.size(32.dp)
                                             )
-                                        }%", fontSize = 12.sp, color = Color.Gray
-                                    )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .background(
+                                                        colors[index % colors.size],
+                                                        RoundedCornerShape(50)
+                                                    )
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = pair.first,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = "¥${
+                                                        String.format(
+                                                            Locale.getDefault(),
+                                                            "%.2f",
+                                                            pair.second
+                                                        )
+                                                    }", fontSize = 14.sp, fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            LinearProgressIndicator(
+                                                progress = { (percent / 100).toFloat() },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(8.dp)
+                                                    .clip(RoundedCornerShape(4.dp)),
+                                                color = colors[index % colors.size],
+                                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "${
+                                                    String.format(
+                                                        Locale.getDefault(),
+                                                        "%.1f",
+                                                        percent
+                                                    )
+                                                }%", fontSize = 12.sp, color = Color.Gray
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "暂无数据", color = Color.Gray)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "没有记录",
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CustomDonutChart(
+    modifier: Modifier = Modifier,
+    data: List<Pair<String, Double>>,
+    colors: List<Color>,
+    totalAmount: Double,
+    centerTitle: String,
+    centerSubtitle: String,
+    isPercentageMode: Boolean = true
+) {
+    val animateRotation = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    // Restart animation whenever the list of bills (or expense/income mode) changes.
+    LaunchedEffect(data) {
+        animateRotation.snapTo(0f)
+        animateRotation.animateTo(
+            targetValue = 360f,
+            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+        )
+    }
+
+    // Add another alpha animation for indicator lines and texts that appears after pie is drawn
+    val animateAlpha by animateFloatAsState(
+        targetValue = if (animateRotation.value >= 360f) 1f else 0f,
+        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
+        label = "donut_alpha"
+    )
+
+    val textMeasurer = rememberTextMeasurer()
+    val centerTitleStyle = androidx.compose.ui.text.TextStyle(
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+    val centerSubtitleStyle = androidx.compose.ui.text.TextStyle(
+        fontSize = 12.sp,
+        color = Color.Gray
+    )
+
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val sweepAngles = data.map { 360f * (it.second / totalAmount).toFloat() }
+        val canvasSize = size.minDimension
+        val center = Offset(size.width / 2, size.height / 2)
+        // Shrunk chart pie size slightly to prevent indicators from visually overflowing
+        val radius = canvasSize / 2 - 60.dp.toPx()
+        val strokeWidth = 14.dp.toPx()
+
+        var startAngle = -90f
+
+        data.forEachIndexed { index, pair ->
+            val sweepAngle = sweepAngles[index] * (animateRotation.value / 360f)
+            val color = colors[index % colors.size]
+
+            drawArc(
+                color = color,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(width = strokeWidth),
+                size = Size(radius * 2, radius * 2),
+                topLeft = Offset(center.x - radius, center.y - radius)
+            )
+
+            if (animateAlpha > 0f) {
+                // Draw indicating lines and text with opacity
+                val angleInRadians = (startAngle + sweepAngle / 2) * (Math.PI / 180f)
+                val lineLength1 = 15.dp.toPx()
+                val lineLength2 = 25.dp.toPx()
+
+                val x1 = center.x + (radius + strokeWidth / 2) * cos(angleInRadians).toFloat()
+                val y1 = center.y + (radius + strokeWidth / 2) * sin(angleInRadians).toFloat()
+
+                val x2 =
+                    center.x + (radius + strokeWidth / 2 + lineLength1) * cos(angleInRadians).toFloat()
+                val y2 =
+                    center.y + (radius + strokeWidth / 2 + lineLength1) * sin(angleInRadians).toFloat()
+
+                val isLeft = x2 < center.x
+                val x3 = if (isLeft) x2 - lineLength2 else x2 + lineLength2
+                val y3 = y2
+
+                drawLine(
+                    color = Color.LightGray,
+                    start = Offset(x1, y1),
+                    end = Offset(x2, y2),
+                    strokeWidth = 2f,
+                    alpha = animateAlpha
+                )
+                drawLine(
+                    color = Color.LightGray,
+                    start = Offset(x2, y2),
+                    end = Offset(x3, y3),
+                    strokeWidth = 2f,
+                    alpha = animateAlpha
+                )
+
+                val infoText = if (isPercentageMode) {
+                    val percentage = (pair.second / totalAmount) * 100
+                    "${pair.first} ${String.format(Locale.getDefault(), "%.1f", percentage)}%"
+                } else {
+                    "${pair.first} ${String.format(Locale.getDefault(), "%.2f", pair.second)}"
+                }
+
+                val textLayoutResult = textMeasurer.measure(
+                    text = infoText,
+                    style = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = color.copy(alpha = animateAlpha))
+                )
+
+                val textLeft =
+                    if (isLeft) x3 - textLayoutResult.size.width - 4.dp.toPx() else x3 + 4.dp.toPx()
+                drawText(
+                    textLayoutResult = textLayoutResult,
+                    topLeft = Offset(textLeft, y3 - textLayoutResult.size.height / 2f)
+                )
+            }
+
+            startAngle += sweepAngle
+        }
+
+        // Draw center text
+        if (animateAlpha > 0f) {
+            val titleLayoutResult =
+                textMeasurer.measure(text = centerTitle, style = centerTitleStyle.copy(color = centerTitleStyle.color.copy(alpha = animateAlpha)))
+            val subtitleLayoutResult =
+                textMeasurer.measure(text = centerSubtitle, style = centerSubtitleStyle.copy(color = centerSubtitleStyle.color.copy(alpha = animateAlpha)))
+
+            val totalHeight =
+                titleLayoutResult.size.height + subtitleLayoutResult.size.height + 4.dp.toPx()
+
+            drawText(
+                textLayoutResult = titleLayoutResult,
+                topLeft = Offset(
+                    center.x - titleLayoutResult.size.width / 2f,
+                    center.y - totalHeight / 2f
+                )
+            )
+            drawText(
+                textLayoutResult = subtitleLayoutResult,
+                topLeft = Offset(
+                    center.x - subtitleLayoutResult.size.width / 2f,
+                    center.y - totalHeight / 2f + titleLayoutResult.size.height + 4.dp.toPx()
+                )
+            )
         }
     }
 }
