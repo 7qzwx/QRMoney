@@ -17,27 +17,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import qzwx.app.feature_asset.components.WalletTypeHelper
-import qzwx.app.feature_asset.components.WalletTypeHelper.formatAmount
-import qzwx.app.module_data.entity.QWalletEntity
-import qzwx.app.module_ui.viewmodel.SharedBillViewModel
-import java.util.Locale
-
-import qzwx.app.module_ui.nav3.UIRoute
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
+import qzwx.app.feature_asset.components.WalletTypeHelper
+import qzwx.app.feature_asset.components.WalletTypeHelper.formatAmount
+import qzwx.app.module_data.entity.QWalletEntity
 import qzwx.app.module_ui.components.Shared_AddNewBill
-import kotlinx.coroutines.launch
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarResult
 import qzwx.app.module_ui.components.Shared_SnakBar
-import qzwx.app.module_ui.components.Shared_SnakBar
+import qzwx.app.module_ui.nav3.UIRoute
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
+import java.util.Locale
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,7 +118,9 @@ fun WalletDetailPage(
     val weekIncome =
         walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfWeek }
             .sumOf { it.amount }
-    val weekExpense = walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }.sumOf { it.amount }
+    val weekExpense =
+        walletBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }
+            .sumOf { it.amount }
 
     var showBottomSheet by remember { mutableStateOf(false) }
     var draftBill by remember { mutableStateOf<qzwx.app.module_data.entity.QBillEntity?>(null) }
@@ -163,6 +161,9 @@ fun WalletDetailPage(
         snackbarHost = { Shared_SnakBar(snackbarHostState) },
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
                 title = {
                     Row(
                         modifier = Modifier
@@ -174,7 +175,8 @@ fun WalletDetailPage(
                         Image(
                             painter = painterResource(id = WalletTypeHelper.toDrawableRes(walletType)),
                             contentDescription = walletType.displayName,
-                            modifier = Modifier.height(24.dp)
+                            modifier = Modifier.height(24.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -192,7 +194,13 @@ fun WalletDetailPage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { backStack?.add(qzwx.app.module_ui.nav3.UIRoute.Search(walletType.name)) }) {
+                    IconButton(onClick = {
+                        backStack?.add(
+                            qzwx.app.module_ui.nav3.UIRoute.Search(
+                                walletType.name
+                            )
+                        )
+                    }) {
                         Icon(imageVector = Icons.Default.Search, contentDescription = "搜索")
                     }
                 }
@@ -201,15 +209,18 @@ fun WalletDetailPage(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = innerPadding,
         ) {
             item {
                 Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                         .clickable(onClick = { isExpanded = !isExpanded })
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -311,7 +322,12 @@ fun WalletDetailPage(
             }
 
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("修改余额", style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(12.dp))

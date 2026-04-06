@@ -9,11 +9,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.entity.QBillEntity
 import java.time.Instant
@@ -41,7 +39,10 @@ fun BillDetailPage(
                 title = { Text(text = "Bill Details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -63,7 +64,8 @@ fun BillDetailPage(
         ) {
             // Amount Header
             val symbol = if (billEntity.type == BillType.INCOME) "+" else "-"
-            val amountColor = if (billEntity.type == BillType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            val amountColor =
+                if (billEntity.type == BillType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
             Text(
                 text = "$symbol ¥${String.format("%.2f", billEntity.amount)}",
@@ -98,7 +100,11 @@ fun BillDetailPage(
                     )
 
                     if (!billEntity.remark.isNullOrBlank()) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                alpha = 0.5f
+                            )
+                        )
                         DetailRow(
                             icon = Icons.AutoMirrored.Filled.Notes,
                             label = "Remark",
@@ -140,6 +146,7 @@ fun BillDetailPage(
         }
     }
 }
+
 
 @Composable
 private fun DetailRow(

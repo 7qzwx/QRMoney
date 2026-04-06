@@ -5,8 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,10 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -37,10 +36,10 @@ import qzwx.app.module_data.entity.QDebtEntity
 import qzwx.app.module_data.entity.QWalletEntity
 import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.viewmodel.SharedBillViewModel
-import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,7 +89,8 @@ fun AssetsPage(
         allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }
             .sumOf { it.amount }
 
-    val totalDebtAmount = allDebts.filter { it.type == DebtType.BORROW }.sumOf { -it.remainingAmount }
+    val totalDebtAmount =
+        allDebts.filter { it.type == DebtType.BORROW }.sumOf { -it.remainingAmount }
 
     var isObscured by remember { mutableStateOf(false) }
     var isFlipped by remember { mutableStateOf(false) }
@@ -132,11 +132,21 @@ fun AssetsPage(
     if (showDebtDialog) {
         var debtName by remember { mutableStateOf(debtToEdit?.name ?: "") }
         var debtType by remember { mutableStateOf(debtToEdit?.type ?: DebtType.BORROW) }
-        var totalAmount by remember { mutableStateOf(debtToEdit?.totalAmount?.takeIf { it > 0 }?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "") }
-        var remainingAmount by remember { mutableStateOf(debtToEdit?.remainingAmount?.takeIf { it > 0 }?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "") }
+        var totalAmount by remember {
+            mutableStateOf(debtToEdit?.totalAmount?.takeIf { it > 0 }
+                ?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "")
+        }
+        var remainingAmount by remember {
+            mutableStateOf(debtToEdit?.remainingAmount?.takeIf { it > 0 }
+                ?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "")
+        }
         var expanded by remember { mutableStateOf(false) }
 
-        var createdAt by remember { mutableStateOf(debtToEdit?.createdAt ?: System.currentTimeMillis()) }
+        var createdAt by remember {
+            mutableStateOf(
+                debtToEdit?.createdAt ?: System.currentTimeMillis()
+            )
+        }
         var deadline by remember { mutableStateOf<Long?>(debtToEdit?.deadline) }
         var showCreatedDatePicker by remember { mutableStateOf(false) }
         var showDeadlinePicker by remember { mutableStateOf(false) }
@@ -163,7 +173,9 @@ fun AssetsPage(
         }
 
         if (showDeadlinePicker) {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = deadline ?: System.currentTimeMillis())
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = deadline ?: System.currentTimeMillis()
+            )
             DatePickerDialog(
                 onDismissRequest = { showDeadlinePicker = false },
                 confirmButton = {
@@ -212,7 +224,7 @@ fun AssetsPage(
                                     DropdownMenuItem(
                                         text = { Text(type.displayName) },
                                         onClick = { debtType = type; expanded = false }
-                                        )
+                                    )
 
                                 }
                             }
@@ -244,7 +256,11 @@ fun AssetsPage(
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(createdAt)),
+                        value = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(
+                            Date(
+                                createdAt
+                            )
+                        ),
                         onValueChange = {},
                         label = { Text("创建时间") },
                         readOnly = true,
@@ -256,7 +272,12 @@ fun AssetsPage(
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = deadline?.let { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(it)) } ?: "未设置",
+                        value = deadline?.let {
+                            SimpleDateFormat(
+                                "yyyy-MM-dd",
+                                Locale.getDefault()
+                            ).format(Date(it))
+                        } ?: "未设置",
                         onValueChange = {},
                         label = {
                             val daysRemaining = deadline?.let {
@@ -516,7 +537,10 @@ fun AssetsPage(
             }
 
             if (!isFlipped) {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "我的钱包",
@@ -542,7 +566,8 @@ fun AssetsPage(
                     }
                 }
             } else {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "债务列表",
@@ -563,7 +588,8 @@ fun AssetsPage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            expandedDebtId = if (expandedDebtId == debt.id) null else debt.id
+                                            expandedDebtId =
+                                                if (expandedDebtId == debt.id) null else debt.id
                                         }
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -578,31 +604,50 @@ fun AssetsPage(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Box(
                                                 modifier = Modifier
-                                                    .background(if (debt.type == DebtType.BORROW) Color(0xFFFFEBEE) else Color(0xFFE8F5E9), shape = RoundedCornerShape(4.dp))
+                                                    .background(
+                                                        if (debt.type == DebtType.BORROW) Color(
+                                                            0xFFFFEBEE
+                                                        ) else Color(0xFFE8F5E9),
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    )
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
                                                     text = debt.type.displayName,
                                                     fontSize = 10.sp,
-                                                    color = if (debt.type == DebtType.BORROW) Color(0xFFD32F2F) else Color(0xFF388E3C)
+                                                    color = if (debt.type == DebtType.BORROW) Color(
+                                                        0xFFD32F2F
+                                                    ) else Color(0xFF388E3C)
                                                 )
                                             }
                                             debt.deadline?.let {
-                                                val days = TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis()).coerceAtLeast(0)
+                                                val days =
+                                                    TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis())
+                                                        .coerceAtLeast(0)
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Box(
                                                     modifier = Modifier
-                                                        .background(Color(0xFFFFF3E0), shape = RoundedCornerShape(4.dp))
+                                                        .background(
+                                                            Color(0xFFFFF3E0),
+                                                            shape = RoundedCornerShape(4.dp)
+                                                        )
                                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                                 ) {
-                                                    Text("剩 ${days}天", fontSize = 10.sp, color = Color(0xFFE65100))
+                                                    Text(
+                                                        "剩 ${days}天",
+                                                        fontSize = 10.sp,
+                                                        color = Color(0xFFE65100)
+                                                    )
                                                 }
                                             }
                                         }
                                     }
                                     Column(horizontalAlignment = Alignment.End) {
                                         val sign = if (debt.type == DebtType.BORROW) "-" else "+"
-                                        val amountColor = if (debt.type == DebtType.BORROW) Color(0xFFF44336) else Color(0xFF4CAF50)
+                                        val amountColor =
+                                            if (debt.type == DebtType.BORROW) Color(0xFFF44336) else Color(
+                                                0xFF4CAF50
+                                            )
 
                                         if (debt.type == DebtType.BORROW) {
                                             Text(
@@ -634,14 +679,26 @@ fun AssetsPage(
                                             .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
                                     ) {
                                         Text(
-                                            text = "创建时间: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(debt.createdAt))}",
+                                            text = "创建时间: ${
+                                                SimpleDateFormat(
+                                                    "yyyy-MM-dd HH:mm",
+                                                    Locale.getDefault()
+                                                ).format(Date(debt.createdAt))
+                                            }",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = Color.Gray
                                         )
                                         debt.deadline?.let {
-                                            val days = TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis()).coerceAtLeast(0)
+                                            val days =
+                                                TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis())
+                                                    .coerceAtLeast(0)
                                             Text(
-                                                text = "最后期限: ${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(it))} (剩 ${days}天)",
+                                                text = "最后期限: ${
+                                                    SimpleDateFormat(
+                                                        "yyyy-MM-dd",
+                                                        Locale.getDefault()
+                                                    ).format(Date(it))
+                                                } (剩 ${days}天)",
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = Color.Gray
                                             )

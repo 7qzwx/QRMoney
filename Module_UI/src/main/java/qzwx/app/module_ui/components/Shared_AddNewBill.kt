@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -22,18 +21,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
@@ -48,31 +44,175 @@ import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_ui.data.billCategoryList
 import qzwx.app.module_ui.data.incomeCategoryList
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.hilt.navigation.compose.hiltViewModel
-import qzwx.app.module_ui.viewmodel.SharedBillViewModel
+
+@Composable
+fun CustomCalculatorKeyboard(
+    amountValue: String,
+    wasEvaluated: Boolean,
+    onKeyClick: (String) -> Unit,
+    onClear: () -> Unit,
+    onBackspace: () -> Unit,
+    onActionClick: () -> Unit
+) {
+    @Composable
+    fun CalcButton(
+        text: String,
+        modifier: Modifier = Modifier,
+        isOperator: Boolean = false,
+        onClick: () -> Unit
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isOperator) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isOperator) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Text(
+                text = text, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                modifier = modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Left Side (0.7 weight)
+        Column(
+            modifier = Modifier.weight(0.7f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("1", Modifier.weight(1f)) { onKeyClick("1") }
+                CalcButton("2", Modifier.weight(1f)) { onKeyClick("2") }
+                CalcButton("3", Modifier.weight(1f)) { onKeyClick("3") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("4", Modifier.weight(1f)) { onKeyClick("4") }
+                CalcButton("5", Modifier.weight(1f)) { onKeyClick("5") }
+                CalcButton("6", Modifier.weight(1f)) { onKeyClick("6") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("7", Modifier.weight(1f)) { onKeyClick("7") }
+                CalcButton("8", Modifier.weight(1f)) { onKeyClick("8") }
+                CalcButton("9", Modifier.weight(1f)) { onKeyClick("9") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("AC", Modifier.weight(1f), isOperator = true) { onClear() }
+                CalcButton("0", Modifier.weight(1f)) { onKeyClick("0") }
+                CalcButton(".", Modifier.weight(1f), isOperator = true) { onKeyClick(".") }
+            }
+        }
+
+        // Right Side (0.3 weight)
+        Column(
+            modifier = Modifier.weight(0.3f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CalcButton("⌫", Modifier.fillMaxWidth(), isOperator = true) { onBackspace() }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("+", Modifier.weight(1f), isOperator = true) { onKeyClick("+") }
+                CalcButton("-", Modifier.weight(1f), isOperator = true) { onKeyClick("-") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CalcButton("×", Modifier.weight(1f), isOperator = true) { onKeyClick("*") }
+                CalcButton("÷", Modifier.weight(1f), isOperator = true) { onKeyClick("/") }
+            }
+
+            val hasOperator = amountValue.drop(1).any { it in listOf('+', '-', '*', '/') }
+            val actionText = when {
+                amountValue.isEmpty() -> "取消"
+                hasOperator -> "等于"
+                wasEvaluated -> "保存"
+                else -> "确认"
+            }
+            CalcButton(actionText, Modifier.fillMaxWidth(), isOperator = true) { onActionClick() }
+        }
+    }
+}
+
+fun evaluateMathExpression(str: String): Double {
+    return object : Any() {
+        var pos = -1;
+        var ch = 0
+        fun nextChar() {
+            ch = if (++pos < str.length) str[pos].code else -1
+        }
+
+        fun eat(charToEat: Int): Boolean {
+            while (ch == ' '.code) nextChar()
+            if (ch == charToEat) {
+                nextChar(); return true
+            }
+            return false
+        }
+
+        fun parse(): Double {
+            nextChar();
+            val x = parseExpression(); if (pos < str.length) throw RuntimeException(); return x
+        }
+
+        fun parseExpression(): Double {
+            var x = parseTerm()
+            while (true) {
+                if (eat('+'.code)) x += parseTerm()
+                else if (eat('-'.code)) x -= parseTerm()
+                else return x
+            }
+        }
+
+        fun parseTerm(): Double {
+            var x = parseFactor()
+            while (true) {
+                if (eat('*'.code)) x *= parseFactor()
+                else if (eat('/'.code)) x /= parseFactor()
+                else return x
+            }
+        }
+
+        fun parseFactor(): Double {
+            if (eat('+'.code)) return parseFactor()
+            if (eat('-'.code)) return -parseFactor()
+            var x: Double
+            val startPos = pos
+            if (eat('('.code)) {
+                x = parseExpression(); eat(')'.code)
+            } else if ((ch in '0'.code..'9'.code) || ch == '.'.code) {
+                while ((ch in '0'.code..'9'.code) || ch == '.'.code) nextChar()
+                x = str.substring(startPos, pos).toDouble()
+            } else throw RuntimeException()
+            return x
+        }
+    }.parse()
+}
 
 @Composable
 fun AddNewBill_AmountInput(
     amountValue: String,
-    onAmountChange: (String) -> Unit
+    onAmountChange: (String) -> Unit,
+    onClick: () -> Unit
 ) {
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(150)
-        focusRequester.requestFocus()
-        keyboardController?.show()
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { onClick() }
     ) {
         Text(
             text = "TOTAL AMOUNT",
@@ -106,10 +246,7 @@ fun AddNewBill_AmountInput(
             BasicTextField(
                 value = amountValue,
                 onValueChange = onAmountChange,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Done
-                ),
+                readOnly = true,
                 singleLine = true,
                 textStyle = TextStyle(
                     fontSize = 48.sp,
@@ -121,7 +258,11 @@ fun AddNewBill_AmountInput(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .alignByBaseline()
-                    .focusRequester(focusRequester),
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            onClick()
+                        }
+                    },
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.Center) {
                         if (amountValue.isEmpty()) {
@@ -139,6 +280,19 @@ fun AddNewBill_AmountInput(
                     }
                 }
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = {
+                if (amountValue.isNotEmpty()) {
+                    onAmountChange(amountValue.dropLast(1))
+                }
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Backspace,
+                    contentDescription = "Backspace",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -355,9 +509,10 @@ fun Shared_AddNewBill(
 
     var selectedWallet by remember(initialBill) {
         // Prefer walletType snapshot when editing old bills, fallback to linked wallet id.
-        val existingWallet = initialBill?.walletType?.displayName ?: initialBill?.walletId?.let { id ->
-            allWallets.find { it.id == id }?.type?.displayName
-        }
+        val existingWallet =
+            initialBill?.walletType?.displayName ?: initialBill?.walletId?.let { id ->
+                allWallets.find { it.id == id }?.type?.displayName
+            }
         mutableStateOf<String?>(existingWallet)
     }
 
@@ -429,6 +584,7 @@ fun Shared_AddNewBill_Content(
     var showWalletDialog by remember { mutableStateOf(false) }
 
     var isClosing by remember { mutableStateOf(false) }
+    var wasEvaluated by remember(initialBill) { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
         confirmValueChange = {
@@ -436,6 +592,9 @@ fun Shared_AddNewBill_Content(
         }
     )
     val scope = rememberCoroutineScope()
+    var showCustomKeyboard by remember { mutableStateOf(true) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     BackHandler {
         isClosing = true
@@ -479,144 +638,211 @@ fun Shared_AddNewBill_Content(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            AddNewBill_AmountInput(
-                amountValue = amountValue,
-                onAmountChange = { newValue ->
-                    if (newValue.length <= 12 && newValue.count { it == '.' } <= 1) {
-                        amountValue = newValue
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            AddNewBill_TypeToggle(
-                isExpense = isExpense,
-                onExpenseChange = { newIsExpense ->
-                    isExpense = newIsExpense
-                    selectedCategory = if (newIsExpense) {
-                        billCategoryList.firstOrNull()?.name ?: ""
-                    } else {
-                        incomeCategoryList.firstOrNull()?.name ?: ""
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = "Select Category",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AddNewBill_AmountInput(
+                    amountValue = amountValue,
+                    onAmountChange = { newValue ->
+                        if (newValue.length <= 15) {
+                            amountValue = newValue
+                            wasEvaluated = false
+                        }
+                    },
+                    onClick = {
+                        showCustomKeyboard = true
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
                 )
 
-                // Clear all button
-                IconButton(
-                    onClick = {
-                        amountValue = ""
-                        isExpense = true
-                        selectedCategory = billCategoryList.firstOrNull()?.name ?: ""
-                        remarkValue = ""
-                    },
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                            CircleShape
-                        )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                AddNewBill_TypeToggle(
+                    isExpense = isExpense,
+                    onExpenseChange = { newIsExpense ->
+                        isExpense = newIsExpense
+                        selectedCategory = if (newIsExpense) {
+                            billCategoryList.firstOrNull()?.name ?: ""
+                        } else {
+                            incomeCategoryList.firstOrNull()?.name ?: ""
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Clear All",
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.size(18.dp)
+                    Text(
+                        text = "Select Category",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Clear all button
+                    IconButton(
+                        onClick = {
+                            amountValue = ""
+                            isExpense = true
+                            selectedCategory = billCategoryList.firstOrNull()?.name ?: ""
+                            remarkValue = ""
+                        },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Clear All",
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AddNewBill_CategoryGrid(
+                    isExpense = isExpense,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it }
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = remarkValue,
+                    onValueChange = { remarkValue = it },
+                    placeholder = { Text("备注（可选）") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .onFocusChanged { if (it.isFocused) showCustomKeyboard = false },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                AddNewBill_DateTimeRow(
+                    selectedDate = selectedDate,
+                    selectedTime = selectedTime,
+                    selectedWalletName = selectedWallet,
+                    onDateClick = { calendarState.show() },
+                    onTimeClick = { clockState.show() },
+                    onWalletClick = { showWalletDialog = true }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val parsedAmount = try {
+                    evaluateMathExpression(amountValue.ifEmpty { "0" })
+                } catch (e: Exception) {
+                    0.0
+                }
+                Button(
+                    onClick = {
+                        val createdAtMillis = LocalDateTime.of(selectedDate, selectedTime)
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant()
+                            .toEpochMilli()
+
+                        onSaveRequest(
+                            QBillEntity(
+                                id = initialBill?.id ?: 0L,
+                                amount = parsedAmount,
+                                type = if (isExpense) BillType.EXPENSE else BillType.INCOME, // 存储类型（支?收入?
+                                category = selectedCategory, // 存储选中的种?
+                                remark = remarkValue.takeIf { it.isNotBlank() },
+                                createdAt = createdAtMillis,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
+                        isClosing = true
+                        scope.launch {
+                            sheetState.hide()
+                            onDismissRequest()
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = parsedAmount > 0.0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(
+                        text = "Confirm",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AddNewBill_CategoryGrid(
-                isExpense = isExpense,
-                selectedCategory = selectedCategory,
-                onCategorySelected = { selectedCategory = it }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = remarkValue,
-                onValueChange = { remarkValue = it },
-                placeholder = { Text("备注（可选）") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-
-            AddNewBill_DateTimeRow(
-                selectedDate = selectedDate,
-                selectedTime = selectedTime,
-                selectedWalletName = selectedWallet,
-                onDateClick = { calendarState.show() },
-                onTimeClick = { clockState.show() },
-                onWalletClick = { showWalletDialog = true }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            val parsedAmount = amountValue.toDoubleOrNull() ?: 0.00
-            Button(
-                onClick = {
-                    val createdAtMillis = LocalDateTime.of(selectedDate, selectedTime)
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-
-                    onSaveRequest(
-                        QBillEntity(
-                            id = initialBill?.id ?: 0L,
-                            amount = parsedAmount,
-                            type = if (isExpense) BillType.EXPENSE else BillType.INCOME, // 存储类型（支?收入?
-                            category = selectedCategory, // 存储选中的种?
-                            remark = remarkValue.takeIf { it.isNotBlank() },
-                            createdAt = createdAtMillis,
-                            updatedAt = System.currentTimeMillis()
-                        )
+            androidx.compose.animation.AnimatedVisibility(visible = showCustomKeyboard) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // 【颜色代码位置在哪：此处】将整体键盘的背景改为material3的第三色调(tertiaryContainer)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .padding(bottom = 16.dp, top = 8.dp)
+                ) {
+                    CustomCalculatorKeyboard(
+                        amountValue = amountValue,
+                        wasEvaluated = wasEvaluated,
+                        onKeyClick = { key ->
+                            if (amountValue.length <= 15) {
+                                amountValue += key
+                                wasEvaluated = false
+                            }
+                        },
+                        onClear = {
+                            amountValue = ""
+                            wasEvaluated = false
+                        },
+                        onBackspace = {
+                            if (amountValue.isNotEmpty()) {
+                                amountValue = amountValue.dropLast(1)
+                                wasEvaluated = false
+                            }
+                        },
+                        onActionClick = {
+                            val hasOperator =
+                                amountValue.drop(1).any { it in listOf('+', '-', '*', '/') }
+                            if (amountValue.isEmpty()) {
+                                showCustomKeyboard = false
+                            } else if (hasOperator) {
+                                try {
+                                    val result = evaluateMathExpression(amountValue)
+                                    amountValue = if (result % 1.0 == 0.0) result.toLong()
+                                        .toString() else String.format(
+                                        java.util.Locale.US, "%.2f", result
+                                    )
+                                    wasEvaluated = true
+                                } catch (e: Exception) {
+                                }
+                            } else {
+                                showCustomKeyboard = false
+                            }
+                        }
                     )
-                    isClosing = true
-                    scope.launch {
-                        sheetState.hide()
-                        onDismissRequest()
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                enabled = parsedAmount > 0.0,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(
-                    text = "Confirm",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
+                }
             }
         }
     }
@@ -642,7 +868,11 @@ fun Shared_AddNewBill_Content(
                             Text(text = wallet, style = MaterialTheme.typography.bodyLarge)
                             if (wallet == selectedWallet) {
                                 Spacer(modifier = Modifier.weight(1f))
-                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                     }

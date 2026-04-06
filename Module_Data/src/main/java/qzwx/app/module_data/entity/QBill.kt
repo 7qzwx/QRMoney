@@ -32,7 +32,7 @@ data class QBillEntity(
 
     // 关联的负债ID：如果该账单属于某笔借款或还款记录，可关联此ID
     @ColumnInfo(name = "debt_id") val debtId: Long? = null
-)
+) : java.io.Serializable
 
 
 enum class BillType {

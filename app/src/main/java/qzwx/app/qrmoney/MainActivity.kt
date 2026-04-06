@@ -8,7 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -30,6 +34,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!isTaskRoot) {
+            val intentAction = intent.action
+            if (intent.hasCategory(android.content.Intent.CATEGORY_LAUNCHER) && intentAction != null && intentAction == android.content.Intent.ACTION_MAIN) {
+                finish()
+                return
+            }
+        }
         enableEdgeToEdge()
         setContent {
             QAppTheme {
@@ -49,7 +60,8 @@ fun QApp() {
         BottomBarRoute.Asset,
         BottomBarRoute.My
     )
-    var selectedRoute: BottomBarRoute by remember { mutableStateOf(BottomBarRoute.Home) }
+    var selectedRouteIndex by rememberSaveable { mutableIntStateOf(0) }
+    val selectedRoute = bottomBarRoute[selectedRouteIndex]
     val backStack = rememberNavBackStack(selectedRoute.route)
     val isBottomBarVisible = bottomBarRoute.any { it.route == backStack.lastOrNull() }  // 是否显示底部导航栏
 
@@ -64,7 +76,7 @@ fun QApp() {
                             icon = { Icon(route.Icon, route.label) },
                             label = { Text(route.label) },
                             onClick = {
-                                selectedRoute = route
+                                selectedRouteIndex = bottomBarRoute.indexOf(route)
                                 backStack.clear()
                                 backStack.add(route.route)
                             }

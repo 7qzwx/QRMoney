@@ -21,11 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
-import qzwx.app.feature_statistic.component.DailyStatisticView
-import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -101,15 +100,14 @@ fun StatisticPage(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                // 每个页面的内容暂时留白，后续根据具体的tab添加
                 if (page == 0) {
-                   DailyStatisticView(backStack = backStack)
+                    DailyStatisticView(backStack = backStack)
                 } else if (page == 1) {
-                    qzwx.app.feature_statistic.component.MonthlyStatisticView(backStack = backStack)
+                    MonthlyStatisticView(backStack = backStack)
                 } else if (page == 2) {
-                    qzwx.app.feature_statistic.component.YearlyStatisticView(backStack = backStack)
+                    YearlyStatisticView(backStack = backStack)
                 } else {
-                    qzwx.app.feature_statistic.component.CustomStatisticView(backStack = backStack)
+                    qzwx.app.feature_statistic.screen.CustomStatisticView(backStack = backStack)
                 }
             }
         }
