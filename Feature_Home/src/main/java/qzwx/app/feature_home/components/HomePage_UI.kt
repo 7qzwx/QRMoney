@@ -15,8 +15,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
@@ -593,7 +591,6 @@ fun Home_SnakBar(
 }
 
 
-
 @Composable
 fun MonthYearPickerDialog(
     visible: Boolean,
@@ -855,9 +852,8 @@ fun Home_TopBar(
             )
         },
         actions = {
-            IconButton(onClick = onSearchClick) {
+            IconButton(onClick = onSearchClick, modifier = Modifier.padding(end = 16.dp)) {
                 Icon(
-                    modifier = Modifier.padding(end = 16.dp),
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search"
                 )

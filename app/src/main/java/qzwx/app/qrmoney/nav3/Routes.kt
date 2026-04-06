@@ -11,7 +11,7 @@ import qzwx.app.feature_my.nav3.MyRoute
 import qzwx.app.feature_statistic.nav3.StatisticRoute
 
 
-sealed class BottomBarRoute(val route: NavKey, val Icon: ImageVector, val label: String) {
+sealed class BottomBarRoute(val route: NavKey, val Icon: androidx.compose.ui.graphics.vector.ImageVector, val label: String) {
     data object Home :
         BottomBarRoute(route = HomeRoute.Home, Icon = Icons.Default.MenuBook, label = "账单")
 
@@ -33,14 +33,4 @@ sealed class BottomBarRoute(val route: NavKey, val Icon: ImageVector, val label:
     data object My : BottomBarRoute(
         route = MyRoute.My, Icon = Icons.Default.Person, label = "我的"
     )
-
-
 }
-
-
-
-
-
-
-
-

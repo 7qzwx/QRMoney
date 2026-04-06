@@ -1,47 +1,21 @@
 package qzwx.app.feature_statistic.screen
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,41 +52,21 @@ fun YearlyStatisticView(
 
     var selectedYear by remember { mutableStateOf(LocalDate.now().year) }
     var isHeatmapExpense by remember { mutableStateOf(true) }
-    var isYearlyPieChartExpense by remember { mutableStateOf(true) }
-    var selectedYearlyPieCategory by remember { mutableStateOf<String?>(null) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
-    val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
-    val errorColor = MaterialTheme.colorScheme.error
     val backgoundColor = MaterialTheme.colorScheme.background
     val yearsList = remember {
         (0..19).map { LocalDate.now().year - it }
     }
 
-    val yearlyBills = remember(allBills, selectedYear) {
-        allBills.filter { bill ->
-            val date =
-                Instant.ofEpochMilli(bill.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
-            date.year == selectedYear
-        }
-    }
 
-    val yearExpense = remember(yearlyBills) {
-        yearlyBills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-    }
-    val yearIncome = remember(yearlyBills) {
-        yearlyBills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
-    }
-    val yearBalance = yearIncome - yearExpense
 
     LazyColumn(
         state = listState,
         modifier = Modifier
             .fillMaxSize()
             .background(backgoundColor)
-            .padding(vertical = 16.dp)
     ) {
         item {
             Column(
@@ -217,7 +171,11 @@ fun YearlyStatisticView(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "收支热力", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "收支热力",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
 
                                 Row(
                                     modifier = Modifier
@@ -292,7 +250,8 @@ fun YearlyStatisticView(
 
                                 val heatBills = targetYearlyBills.filter { it.type == typeToFilter }
                                 val billDates = heatBills.map {
-                                    Instant.ofEpochMilli(it.createdAt).atZone(ZoneId.systemDefault())
+                                    Instant.ofEpochMilli(it.createdAt)
+                                        .atZone(ZoneId.systemDefault())
                                         .toLocalDate()
                                 }.toSet()
 
@@ -309,7 +268,8 @@ fun YearlyStatisticView(
                                         ) {
                                             for (col in 0 until 4) {
                                                 val monthIndex = row * 4 + col + 1
-                                                val isLeap = java.time.Year.isLeap(targetYear.toLong())
+                                                val isLeap =
+                                                    java.time.Year.isLeap(targetYear.toLong())
                                                 val daysInMonth =
                                                     java.time.Month.of(monthIndex).length(isLeap)
                                                 val firstDateOfMonth =
@@ -341,7 +301,8 @@ fun YearlyStatisticView(
                                                         ) {
                                                             for (d in 1..7) {
                                                                 val dayIndex = w * 7 + d
-                                                                val dateDay = dayIndex - firstDayOfWeek + 1
+                                                                val dateDay =
+                                                                    dayIndex - firstDayOfWeek + 1
                                                                 if (dateDay in 1..daysInMonth) {
                                                                     val currentDate = LocalDate.of(
                                                                         targetYear,
@@ -349,13 +310,20 @@ fun YearlyStatisticView(
                                                                         dateDay
                                                                     )
                                                                     val cellColor =
-                                                                        if (billDates.contains(currentDate)) activeColor else inactiveColor
+                                                                        if (billDates.contains(
+                                                                                currentDate
+                                                                            )
+                                                                        ) activeColor else inactiveColor
                                                                     Box(
                                                                         modifier = Modifier
                                                                             .weight(1f)
                                                                             .aspectRatio(1f)
                                                                             .padding(1.dp)
-                                                                            .clip(RoundedCornerShape(50))
+                                                                            .clip(
+                                                                                RoundedCornerShape(
+                                                                                    50
+                                                                                )
+                                                                            )
                                                                             .background(cellColor)
                                                                     )
                                                                 } else {
@@ -602,12 +570,10 @@ fun YearlyStatisticView(
                                     }
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
-
                     Spacer(modifier = Modifier.height(24.dp))
+
                 }
             }
         }

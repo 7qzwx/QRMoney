@@ -88,27 +88,25 @@ fun StatisticPage(
             }
         },
     ) { innerPadding ->
-        Column(
+
+        // TopBar区域
+
+        HorizontalPager(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(top = innerPadding.calculateTopPadding()),
-        ) {
-            // TopBar区域
+            state = pagerState,
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
             ) { page ->
-                if (page == 0) {
-                    DailyStatisticView(backStack = backStack)
-                } else if (page == 1) {
-                    MonthlyStatisticView(backStack = backStack)
-                } else if (page == 2) {
-                    YearlyStatisticView(backStack = backStack)
-                } else {
-                    qzwx.app.feature_statistic.screen.CustomStatisticView(backStack = backStack)
-                }
+            if (page == 0) {
+                DailyStatisticView(backStack = backStack)
+            } else if (page == 1) {
+                MonthlyStatisticView(backStack = backStack)
+            } else if (page == 2) {
+                YearlyStatisticView(backStack = backStack)
+            } else {
+                qzwx.app.feature_statistic.screen.CustomStatisticView(backStack = backStack)
             }
         }
     }

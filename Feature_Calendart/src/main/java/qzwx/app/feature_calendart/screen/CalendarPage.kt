@@ -126,7 +126,7 @@ fun CalendarPage(
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(top =  innerPadding.calculateTopPadding())
                 .fillMaxSize()
         ) {
             // 星期头部 (Sun, Mon, Tue...)

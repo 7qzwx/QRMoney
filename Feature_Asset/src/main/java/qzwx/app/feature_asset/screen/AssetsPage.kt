@@ -40,6 +40,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import qzwx.app.feature_asset.components.AssetsFrontCard
+import qzwx.app.feature_asset.components.AssetsBackCard
+import qzwx.app.feature_asset.components.DebtListCard
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,33 +63,17 @@ fun AssetsPage(
     val allBills by viewModel.allBills.collectAsState()
     val allDebts by viewModel.allDebts.collectAsState()
 
-    var isExpanded by remember { mutableStateOf(false) }
-
     // Bill aggregations
     val now = java.time.LocalDateTime.now()
     val startOfMonth =
         now.withDayOfMonth(1).with(java.time.LocalTime.MIN).atZone(java.time.ZoneId.systemDefault())
             .toInstant().toEpochMilli()
-    val startOfWeek = now.with(java.time.DayOfWeek.MONDAY).with(java.time.LocalTime.MIN)
-        .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-    val totalIncome = allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME }
-        .sumOf { it.amount }
-    val totalExpense = allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE }
-        .sumOf { it.amount }
 
     val monthIncome =
         allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfMonth }
             .sumOf { it.amount }
     val monthExpense =
         allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfMonth }
-            .sumOf { it.amount }
-
-    val weekIncome =
-        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.INCOME && it.createdAt >= startOfWeek }
-            .sumOf { it.amount }
-    val weekExpense =
-        allBills.filter { it.type == qzwx.app.module_data.entity.BillType.EXPENSE && it.createdAt >= startOfWeek }
             .sumOf { it.amount }
 
     val totalDebtAmount =
@@ -352,187 +339,30 @@ fun AssetsPage(
             ) {
                 if (rotation <= 90f) {
                     // Front side (资产)
-                    Card(
+                    AssetsFrontCard(
+                        totalAssets = totalAssets,
+                        walletCount = WalletType.entries.size,
+                        monthIncome = monthIncome,
+                        monthExpense = monthExpense,
+                        isObscured = isObscured,
+                        onToggleObscured = { isObscured = !isObscured },
+                        onToggleFlip = { isFlipped = true },
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { isFlipped = true },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF00BFA5))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "总资产",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White
-                                )
-                                Row {
-                                    IconButton(onClick = { isObscured = !isObscured }) {
-                                        Icon(
-                                            imageVector = if (isObscured) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = "隐藏/显示",
-                                            tint = Color.White
-                                        )
-                                    }
-                                    IconButton(onClick = { isFlipped = !isFlipped }) {
-                                        Icon(
-                                            imageVector = Icons.Default.SwapHoriz,
-                                            contentDescription = "翻转",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                            Text(
-                                text = "${displayAmount(totalAssets)}",
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.AccountBalanceWallet,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        "${WalletType.entries.size}个账户",
-                                        color = Color.White,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.TrendingUp,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        "本月收支: ${
-                                            displayAmount(
-                                                monthIncome - monthExpense,
-                                                true
-                                            )
-                                        }", color = Color.White, fontSize = 12.sp
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "Developed by QZWX",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 10.sp,
-                                fontStyle = FontStyle.Italic,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
+                    )
                 } else {
                     // Back side (负债)
-                    Card(
+                    AssetsBackCard(
+                        totalDebtAmount = totalDebtAmount,
+                        debtCount = allDebts.size,
+                        isObscured = isObscured,
+                        onToggleObscured = { isObscured = !isObscured },
+                        onToggleFlip = { isFlipped = false },
+                        onAddDebt = {
+                            debtToEdit = null
+                            showDebtDialog = true
+                        },
                         modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { rotationY = 180f }
-                            .clickable { isFlipped = false },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF44336))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "总债务",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White
-                                )
-                                Row {
-                                    IconButton(onClick = {
-                                        debtToEdit = null
-                                        showDebtDialog = true
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = "新增负债",
-                                            tint = Color.White
-                                        )
-                                    }
-                                    IconButton(onClick = { isObscured = !isObscured }) {
-                                        Icon(
-                                            imageVector = if (isObscured) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = "隐藏/显示",
-                                            tint = Color.White
-                                        )
-                                    }
-                                    IconButton(onClick = { isFlipped = !isFlipped }) {
-                                        Icon(
-                                            imageVector = Icons.Default.SwapHoriz,
-                                            contentDescription = "翻转",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                text = "${displayAmount(totalDebtAmount)}",
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.CreditCard,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        "${allDebts.size}个负债",
-                                        color = Color.White,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "Developed by QZWX",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 10.sp,
-                                fontStyle = FontStyle.Italic,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
+                    )
                 }
             }
 
@@ -566,171 +396,19 @@ fun AssetsPage(
                     }
                 }
             } else {
-                Card(modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "债务列表",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        if (allDebts.isEmpty()) {
-                            Text(
-                                "暂无负债",
-                                color = Color.Gray,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        } else {
-                            allDebts.forEach { debt ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            expandedDebtId =
-                                                if (expandedDebtId == debt.id) null else debt.id
-                                        }
-                                        .padding(vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = debt.name,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(
-                                                        if (debt.type == DebtType.BORROW) Color(
-                                                            0xFFFFEBEE
-                                                        ) else Color(0xFFE8F5E9),
-                                                        shape = RoundedCornerShape(4.dp)
-                                                    )
-                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(
-                                                    text = debt.type.displayName,
-                                                    fontSize = 10.sp,
-                                                    color = if (debt.type == DebtType.BORROW) Color(
-                                                        0xFFD32F2F
-                                                    ) else Color(0xFF388E3C)
-                                                )
-                                            }
-                                            debt.deadline?.let {
-                                                val days =
-                                                    TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis())
-                                                        .coerceAtLeast(0)
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Box(
-                                                    modifier = Modifier
-                                                        .background(
-                                                            Color(0xFFFFF3E0),
-                                                            shape = RoundedCornerShape(4.dp)
-                                                        )
-                                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                                ) {
-                                                    Text(
-                                                        "剩 ${days}天",
-                                                        fontSize = 10.sp,
-                                                        color = Color(0xFFE65100)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        val sign = if (debt.type == DebtType.BORROW) "-" else "+"
-                                        val amountColor =
-                                            if (debt.type == DebtType.BORROW) Color(0xFFF44336) else Color(
-                                                0xFF4CAF50
-                                            )
-
-                                        if (debt.type == DebtType.BORROW) {
-                                            Text(
-                                                text = "待还: ${
-                                                    if (isObscured) "***" else sign + formatAmount(
-                                                        debt.remainingAmount
-                                                    )
-                                                }",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = amountColor
-                                            )
-                                        }
-                                        Text(
-                                            text = "总计: ${
-                                                if (isObscured) "***" else sign + formatAmount(
-                                                    debt.totalAmount
-                                                )
-                                            }",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.Green
-                                        )
-                                    }
-                                }
-                                AnimatedVisibility(visible = expandedDebtId == debt.id) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
-                                    ) {
-                                        Text(
-                                            text = "创建时间: ${
-                                                SimpleDateFormat(
-                                                    "yyyy-MM-dd HH:mm",
-                                                    Locale.getDefault()
-                                                ).format(Date(debt.createdAt))
-                                            }",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color.Gray
-                                        )
-                                        debt.deadline?.let {
-                                            val days =
-                                                TimeUnit.MILLISECONDS.toDays(it - System.currentTimeMillis())
-                                                    .coerceAtLeast(0)
-                                            Text(
-                                                text = "最后期限: ${
-                                                    SimpleDateFormat(
-                                                        "yyyy-MM-dd",
-                                                        Locale.getDefault()
-                                                    ).format(Date(it))
-                                                } (剩 ${days}天)",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = Color.Gray
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Row(
-                                            horizontalArrangement = Arrangement.End,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            OutlinedButton(
-                                                onClick = {
-                                                    debtToEdit = debt
-                                                    showDebtDialog = true
-                                                },
-                                                modifier = Modifier.padding(end = 8.dp)
-                                            ) {
-                                                Text("编辑")
-                                            }
-                                            Button(
-                                                onClick = { showDeleteConfirmDialog = debt },
-                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                                            ) {
-                                                Text("删除")
-                                            }
-                                        }
-                                    }
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                            }
-                        }
+                DebtListCard(
+                    allDebts = allDebts,
+                    expandedDebtId = expandedDebtId,
+                    onDebtExpandedChange = { expandedDebtId = it },
+                    isObscured = isObscured,
+                    onEditDebt = { debt ->
+                        debtToEdit = debt
+                        showDebtDialog = true
+                    },
+                    onDeleteDebtClick = { debt ->
+                        showDeleteConfirmDialog = debt
                     }
-                }
+                )
             }
         }
     }

@@ -21,7 +21,7 @@ data class QWalletEntity(
     @ColumnInfo(name = "修改时间") val updatedAt: Long = System.currentTimeMillis()
 )
 
-
+@kotlinx.serialization.Serializable
 enum class WalletType(val displayName: String) {
     CASH("现金"),
     ALIPAY("支付宝"),

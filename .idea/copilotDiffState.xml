@@ -110,24 +110,6 @@
             </PendingDiffInfo>
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/Module_Data/src/main/java/qzwx/app/module_data/entity/QBill.kt">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/Module_Data/src/main/java/qzwx/app/module_data/entity/QBill.kt" />
-              <option name="originalContent" value="package qzwx.app.module_data.entity&#10;&#10;&#10;import androidx.room.ColumnInfo&#10;import androidx.room.Entity&#10;import androidx.room.PrimaryKey&#10;&#10;&#10;@Entity&#10;data class QBillEntity(&#10;    @PrimaryKey(autoGenerate = true) val id: Long = 0L,&#10;&#10;    @ColumnInfo(name = &quot;金额&quot;) val amount: Double,&#10;&#10;    @ColumnInfo(name = &quot;类型&quot;) val type: BillType = BillType.EXPENSE,&#10;&#10;    @ColumnInfo(name = &quot;种类&quot;) val category: String,&#10;&#10;    @ColumnInfo(name = &quot;备注&quot;) val remark: String? = null,&#10;&#10;    // 创建时间&#10;    @ColumnInfo(name = &quot;创建时间&quot;) val createdAt: Long = System.currentTimeMillis(),&#10;&#10;    // 修改时间&#10;    @ColumnInfo(name = &quot;修改时间&quot;) val updatedAt: Long = System.currentTimeMillis(),&#10;&#10;    // 关联的钱包ID：记录该笔账单资金从哪个钱包发生变化&#10;    @ColumnInfo(name = &quot;wallet_id&quot;) val walletId: Long? = null,&#10;&#10;    // 支付方式快照：用于在钱包记录变更后仍能保留账单的支付类型&#10;    @ColumnInfo(name = &quot;wallet_type&quot;) val walletType: WalletType = WalletType.ALIPAY,&#10;&#10;    // 关联的负债ID：如果该账单属于某笔借款或还款记录，可关联此ID&#10;    @ColumnInfo(name = &quot;debt_id&quot;) val debtId: Long? = null&#10;)&#10;&#10;&#10;enum class BillType {&#10;    EXPENSE,&#10;    INCOME&#10;}" />
-              <option name="updatedContent" value="package qzwx.app.module_data.entity&#13;&#10;&#13;&#10;&#13;&#10;import androidx.room.ColumnInfo&#13;&#10;import androidx.room.Entity&#13;&#10;import androidx.room.PrimaryKey&#13;&#10;&#13;&#10;&#13;&#10;@Entity&#13;&#10;data class QBillEntity(&#13;&#10;    @PrimaryKey(autoGenerate = true) val id: Long = 0L,&#13;&#10;&#13;&#10;    @ColumnInfo(name = &quot;金额&quot;) val amount: Double,&#13;&#10;&#13;&#10;    @ColumnInfo(name = &quot;类型&quot;) val type: BillType = BillType.EXPENSE,&#13;&#10;&#13;&#10;    @ColumnInfo(name = &quot;种类&quot;) val category: String,&#13;&#10;&#13;&#10;    @ColumnInfo(name = &quot;备注&quot;) val remark: String? = null,&#13;&#10;&#13;&#10;    // 创建时间&#13;&#10;    @ColumnInfo(name = &quot;创建时间&quot;) val createdAt: Long = System.currentTimeMillis(),&#13;&#10;&#13;&#10;    // 修改时间&#13;&#10;    @ColumnInfo(name = &quot;修改时间&quot;) val updatedAt: Long = System.currentTimeMillis(),&#13;&#10;&#13;&#10;    // 关联的钱包ID：记录该笔账单资金从哪个钱包发生变化&#13;&#10;    @ColumnInfo(name = &quot;wallet_id&quot;) val walletId: Long? = null,&#13;&#10;&#13;&#10;    // 支付方式快照：用于在钱包记录变更后仍能保留账单的支付类型&#13;&#10;    @ColumnInfo(name = &quot;wallet_type&quot;) val walletType: WalletType = WalletType.ALIPAY,&#13;&#10;&#13;&#10;    // 关联的负债ID：如果该账单属于某笔借款或还款记录，可关联此ID&#13;&#10;    @ColumnInfo(name = &quot;debt_id&quot;) val debtId: Long? = null&#13;&#10;) : java.io.Serializable&#13;&#10;&#13;&#10;&#13;&#10;enum class BillType {&#13;&#10;    EXPENSE,&#13;&#10;    INCOME&#13;&#10;}" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/Module_UI/src/main/java/qzwx/app/module_ui/nav3/Routes.kt">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/Module_UI/src/main/java/qzwx/app/module_ui/nav3/Routes.kt" />
-              <option name="originalContent" value="package qzwx.app.module_ui.nav3&#10;&#10;import androidx.navigation3.runtime.NavKey&#10;import qzwx.app.module_data.entity.QBillEntity&#10;&#10;sealed class UIRoute : NavKey {&#10;    data class BillDetail(val bill: QBillEntity) : UIRoute()&#10;    data class CategoryBills(val categoryName: String, val bills: List&lt;QBillEntity&gt;) : UIRoute()&#10;    data class Search(val walletTypeName: String? = null) : UIRoute()&#10;}" />
-              <option name="updatedContent" value="package qzwx.app.module_ui.nav3&#13;&#10;&#13;&#10;import androidx.navigation3.runtime.NavKey&#13;&#10;import qzwx.app.module_data.entity.QBillEntity&#13;&#10;&#13;&#10;sealed class UIRoute : NavKey, java.io.Serializable {&#13;&#10;    data class BillDetail(val bill: QBillEntity) : UIRoute()&#13;&#10;    data class CategoryBills(val categoryName: String, val bills: List&lt;QBillEntity&gt;) : UIRoute()&#13;&#10;    data class Search(val walletTypeName: String? = null) : UIRoute()&#13;&#10;}" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
       </map>
     </option>
   </component>

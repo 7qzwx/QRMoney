@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
@@ -57,4 +57,6 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.59.2")
     api("androidx.hilt:hilt-navigation-compose:1.3.0")
     ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation(libs.kotlinx.serialization.core)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }

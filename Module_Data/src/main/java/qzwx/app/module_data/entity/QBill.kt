@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 
 
 @Entity
+@kotlinx.serialization.Serializable
 data class QBillEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 
@@ -35,6 +36,7 @@ data class QBillEntity(
 ) : java.io.Serializable
 
 
+@kotlinx.serialization.Serializable
 enum class BillType {
     EXPENSE,
     INCOME

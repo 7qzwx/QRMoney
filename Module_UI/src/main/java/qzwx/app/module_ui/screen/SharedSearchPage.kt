@@ -1,6 +1,8 @@
 package qzwx.app.module_ui.screen
 
 import android.annotation.SuppressLint
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -12,23 +14,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.launch
-import qzwx.app.module_ui.viewmodel.SharedBillViewModel
 import qzwx.app.module_data.entity.BillType
+import qzwx.app.module_data.entity.QBillEntity
+import qzwx.app.module_ui.components.Shared_AddNewBill
 import qzwx.app.module_ui.components.Shared_BillDayGroup
 import qzwx.app.module_ui.nav3.UIRoute
+import qzwx.app.module_ui.viewmodel.SharedBillViewModel
+import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-
-import androidx.activity.ComponentActivity
-import androidx.compose.ui.platform.LocalContext
+import java.util.Locale
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +57,31 @@ fun SharedSearchPage(
     val keyboardController = LocalSoftwareKeyboardController.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
+
+    if (showBottomSheet) {
+        Shared_AddNewBill(
+            initialBill = draftBill,
+            defaultDate = LocalDate.now(),
+            onDismissRequest = {
+                showBottomSheet = false
+                draftBill = null
+            },
+            onSaveRequest = { modifiedBill ->
+                coroutineScope.launch {
+                    viewModel.insertBill(modifiedBill)
+                    showBottomSheet = false
+                    draftBill = null
+                    snackbarHostState.showSnackbar(
+                        message = "已更新账单",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        )
+    }
 
     // Filter logic
     val filteredBills = remember(
@@ -207,11 +239,9 @@ fun SharedSearchPage(
                                 expenseTotal = expenseTotal,
                                 incomeTotal = incomeTotal,
                                 bills = dailyBills,
-                                onEditBill = {
-                                    // TODO: Could implement editing from search page if needed
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Editing from search is not supported yet.")
-                                    }
+                                onEditBill = { clickedBill ->
+                                    draftBill = clickedBill
+                                    showBottomSheet = true
                                 },
                                 onDeleteBill = { billToDelete ->
                                     coroutineScope.launch {
@@ -240,6 +270,9 @@ fun SharedSearchPage(
 
     if (showDateRangePicker) {
         DatePickerDialog(
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
             onDismissRequest = { showDateRangePicker = false },
             confirmButton = {
                 TextButton(onClick = { showDateRangePicker = false }) {
@@ -257,13 +290,60 @@ fun SharedSearchPage(
         ) {
             DateRangePicker(
                 state = dateRangePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                    weekdayContentColor = MaterialTheme.colorScheme.onSurface,
+                    subheadContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationContentColor = MaterialTheme.colorScheme.onSurface,
+                    yearContentColor = MaterialTheme.colorScheme.onSurface,
+                    currentYearContentColor = MaterialTheme.colorScheme.onSurface,
+                    selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                    dayContentColor = MaterialTheme.colorScheme.onSurface,
+                    disabledDayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledSelectedDayContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f),
+                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                    disabledSelectedDayContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                    todayContentColor = MaterialTheme.colorScheme.primary,
+                    todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                    dayInSelectionRangeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    dayInSelectionRangeContainerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
                 title = {
                     Text(
-                        text = "Select Date Range",
-                        modifier = Modifier.padding(start = 24.dp, top = 24.dp)
+                        text = "选择日期范围",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, top = 24.dp),
+                        textAlign = TextAlign.Center
                     )
                 },
-                modifier = Modifier.weight(1f)
+                headline = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val startText = dateRangePickerState.selectedStartDateMillis?.let {
+                            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)
+                        } ?: "开始日期"
+                        val endText = dateRangePickerState.selectedEndDateMillis?.let {
+                            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)
+                        } ?: "结束日期"
+
+                        Text(startText, fontSize = 14.sp)
+                        Text("-", fontSize = 14.sp)
+                        Text(endText, fontSize = 14.sp)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .background(MaterialTheme.colorScheme.surface)
             )
         }
     }
