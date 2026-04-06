@@ -78,6 +78,7 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.59.2")
     //chart
     api("io.github.ehsannarmani:compose-charts:0.2.5")
+    api("io.github.thechance101:chart:1.1.0")
     //Pager3
     api("androidx.paging:paging-runtime:3.4.2")
     testImplementation("androidx.paging:paging-common:3.4.2")

@@ -205,7 +205,7 @@ fun Shared_BillDayGroup(
 
         // Bill Items wrapped in Surface container
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()

@@ -23,6 +23,7 @@ import java.util.Locale
 fun WalletBalanceRow(
     wallet: QWalletEntity,
     onClick: () -> Unit,
+    isObscured: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -50,7 +51,7 @@ fun WalletBalanceRow(
             )
         }
         Text(
-            text = WalletTypeHelper.formatAmount(wallet.balance),
+            text = if (isObscured) "***" else WalletTypeHelper.formatAmount(wallet.balance),
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold
         )
@@ -77,4 +78,3 @@ object WalletTypeHelper {
         }
     }
 }
-

@@ -2,6 +2,8 @@ package qzwx.app.feature_my.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,12 +34,13 @@ import java.util.concurrent.TimeUnit
 private const val FIRST_LAUNCH_PREF = "first_launch_pref"
 private const val FIRST_LAUNCH_DATE = "first_launch_date"
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "ContextCastToActivity")
 @Composable
 fun MyPage(
-    viewModel1: DevTestViewModel = hiltViewModel(),
-    viewModel: MyPage_VM = hiltViewModel()
 ) {
+    val activity = LocalContext.current as ComponentActivity
+    val viewModel1: DevTestViewModel = hiltViewModel(activity)
+    val viewModel: MyPage_VM = hiltViewModel(activity)
     val myDateState by viewModel.myDate.collectAsState()
     val actualTransactionCount by viewModel.actualTransactionCount.collectAsState()
 

@@ -103,7 +103,7 @@ fun SharedSearchPage(
                     TextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search category or remark...") },
+                        placeholder = { Text("在此搜索种类或者备注...") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,

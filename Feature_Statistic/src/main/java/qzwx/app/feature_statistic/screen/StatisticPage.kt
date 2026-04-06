@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -19,9 +19,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.launch
+import qzwx.app.feature_statistic.component.DailyStatisticView
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -29,17 +30,12 @@ fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
     val tabs = listOf("日常", "月统计", "年统计", "自定义")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
-    Scaffold { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-        ) {
-            // TopBar区域
+    Scaffold(
+        topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -73,15 +69,16 @@ fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
                         }
                     }
                 }
-
-                IconButton(onClick = { /* TODO */ }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More",
-                        tint = Color(0xFFA6D690)
-                    )
-                }
             }
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(top = innerPadding.calculateTopPadding()),
+        ) {
+            // TopBar区域
 
             HorizontalPager(
                 state = pagerState,
@@ -89,7 +86,7 @@ fun StatisticPage(backStack: NavBackStack<NavKey>? = null) {
             ) { page ->
                 // 每个页面的内容暂时留白，后续根据具体的tab添加
                 if (page == 0) {
-                    qzwx.app.feature_statistic.component.DailyStatisticView()
+                   DailyStatisticView()
                 } else if (page == 1) {
                     qzwx.app.feature_statistic.component.MonthlyStatisticView(backStack = backStack)
                 } else if (page == 2) {

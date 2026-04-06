@@ -18,11 +18,10 @@ data class QDebtEntity(
 
     @ColumnInfo(name = "创建时间") val createdAt: Long = System.currentTimeMillis(),
 
-    @ColumnInfo(name = "最后还清时间") val clearedAt: Long? = null
+    @ColumnInfo(name = "最后期限") val deadline: Long? = null
 )
 
 enum class DebtType(val displayName: String) {
     BORROW("借入"),
     LEND("借出")
 }
-

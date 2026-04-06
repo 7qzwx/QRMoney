@@ -17,12 +17,15 @@ import qzwx.app.module_data.entity.WalletType
 import qzwx.app.module_data.entity.QBillEntity
 import qzwx.app.module_data.entity.BillType
 import qzwx.app.module_data.dao.QBillDao
+import qzwx.app.module_data.dao.QDebtDao
+import qzwx.app.module_data.entity.QDebtEntity
 import javax.inject.Inject
 
 @HiltViewModel
 class SharedBillViewModel @Inject constructor(
     private val walletDao: QWalletDao,
-    private val billDao: QBillDao
+    private val billDao: QBillDao,
+    private val debtDao: QDebtDao
 ) : ViewModel() {
 
     private val walletInitMutex = Mutex()
@@ -42,6 +45,31 @@ class SharedBillViewModel @Inject constructor(
             SharingStarted.WhileSubscribed(5000),
             emptyList()
         )
+
+    val allDebts: StateFlow<List<QDebtEntity>> = debtDao.getAllDebts()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
+    fun insertDebt(debt: QDebtEntity) {
+        viewModelScope.launch {
+            debtDao.insertDebt(debt)
+        }
+    }
+
+    fun updateDebt(debt: QDebtEntity) {
+        viewModelScope.launch {
+            debtDao.updateDebt(debt)
+        }
+    }
+
+    fun deleteDebt(debt: QDebtEntity) {
+        viewModelScope.launch {
+            debtDao.deleteDebt(debt)
+        }
+    }
 
     init {
         ensureWalletsInitialized()
