@@ -1,215 +1,121 @@
 package qzwx.app.feature_my.component
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.EmojiNature
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-// 模拟信用卡数据
-data class CardData(
-    val organization: String,
-    val number: String,
-    val expire: String,
-    val holder: String
-)
-@Preview(showBackground = true)
+
 @Composable
-fun MyPage_Card() {
-    val rotated = remember { mutableStateOf(false) }  // 用于判断是否翻转
-    val currentDate = LocalDate.now()
-    val formattedDate = currentDate.format(DateTimeFormatter.ofPattern("MM/yy"))  //当前日期
-    val result = remember {
-        mutableStateOf(
-            CardData(
-                "七种文学-高级会员",
-                "2022 0012 0005 0000",
-                formattedDate,    //当期日期
-                "七种文学-用户名"
-            )
-        )
-    }
-    // 卡片旋转动画
-    val rotation = animateFloatAsState(
-        targetValue = if (rotated.value) 180f else 0f,
-        animationSpec = tween(500)
-    ).value
-    // 前面的透明度动画
-    val animateFront = animateFloatAsState(
-        targetValue = if (!rotated.value) 1f else 0f,
-        animationSpec = tween(500)
-    ).value
-    // 后面的透明度动画
-    val animateBack = animateFloatAsState(
-        targetValue = if (rotated.value) 1f else 0f,
-        animationSpec = tween(500)
-    ).value
-    // 根据卡片组织选择对应的图标
+fun UserInfoCard(
+    daysCount: Int,
+    transactionCount: Int
+) {
     Card(
         modifier = Modifier
-            .height(220.dp)
             .fillMaxWidth()
-            .padding(10.dp)
-            .graphicsLayer {
-                rotationY = rotation  // 控制旋转动画
-                cameraDistance = 8 * density  // 增加立体效果
-            }
-            .clickable {
-                rotated.value = !rotated.value  // 点击时触发旋转
-            },
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFE0F2F1)
+        )
     ) {
-        // 正面内容
-        if (!rotated.value) {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.padding(
-                    start = 12.dp,
-                    end = 12.dp,
-                    bottom = 8.dp
-                ), // 增加左右的padding
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // 背景装饰
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
             ) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                // 左侧装饰植物
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .size(60.dp)
+                ) {
+                    // 简化的植物装饰
                     Icon(
-                        painter = painterResource(qzwx.app.feature_my.R.drawable.openai),
-                        contentDescription = "OpenAi",
-                        modifier = Modifier
-                            .width(50.dp)
-                            .height(50.dp)
-                            .padding(top = 8.dp, bottom = 6.dp)
-                            .graphicsLayer { alpha = animateFront },  // 控制透明度
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        painter = painterResource(qzwx.app.feature_my.R.drawable.visa),
-                        contentDescription = "Visa",
-                        modifier = Modifier
-                            .size(50.dp)
-                            .graphicsLayer { alpha = animateFront },
-                        tint = MaterialTheme.colorScheme.onSurface
+                        imageVector = Icons.Outlined.EmojiNature,
+                        contentDescription = null,
+                        tint = Color(0x334CAF50),
+                        modifier = Modifier.size(60.dp)
                     )
                 }
-                Text(
-                    text = result.value.number,
+                // 右侧装饰植物
+                Box(
                     modifier = Modifier
-                        .padding(top = 16.dp)
-                        .fillMaxWidth()
-                        .graphicsLayer { alpha = animateFront },  // 控制透明度
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 25.sp, textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(10.dp)) // 控制垂直间距
-                Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(horizontalAlignment = Alignment.Start) {
-                        Text(
-                            text = "Card Holder",
-                            color = Color.Gray,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer { alpha = animateFront }
-                        )
-                        Text(
-                            text = result.value.holder,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer { alpha = animateFront }
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Column(horizontalAlignment = Alignment.Start) {
-                        Text(
-                            text = "Current Date",
-                            color = Color.Gray,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer { alpha = animateFront }
-                        )
-                        Text(
-                            text = result.value.expire,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.graphicsLayer { alpha = animateFront }
-                        )
-                    }
+                        .align(Alignment.BottomEnd)
+                        .size(60.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.EmojiNature,
+                        contentDescription = null,
+                        tint = Color(0x334CAF50),
+                        modifier = Modifier.size(60.dp)
+                    )
                 }
-                // 已记录的文本
-                Text(
-                    text = "坚持第520天,已记录500条账单",
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 10.dp, bottom = 10.dp)
-                        .graphicsLayer { alpha = animateFront }
-                        .fillMaxWidth(),
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center
-                )
             }
-        }
-        // 反面内容
-        else {
+            // 用户信息内容
             Column(
-                modifier = Modifier.padding(top = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                Divider(
+                // 用户头像
+                Image(
+                    painter = painterResource(id = qzwx.app.feature_my.R.drawable.qzwxlogo),
+                    contentDescription = "用户头像",
                     modifier = Modifier
-                        .graphicsLayer { alpha = animateBack },  // 控制透明度
-                    color = Color.Black,
-                    thickness = 50.dp
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                        .border(
+                            2.dp,
+                            Color.White,
+                            CircleShape
+                        )
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                // 用户名
                 Text(
-                    text = "welcome To AccountBook !",
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .background(Color.White)
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            alpha = animateBack
-                            rotationY = rotation  // 反面也进行旋转
-                        }
-                        .padding(10.dp),
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.End
+                    text = "七种文学",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF4CAF50)
                 )
-                Spacer(modifier = Modifier.weight(1f))
+
+                Spacer(modifier = Modifier.height(8.dp))
+                // 记账信息 - 使用动态计算的数据
                 Text(
-                    text = "Developed by QZWX",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            alpha = animateBack
-                            rotationY = rotation
-                        }
-                        .padding(end = 15.dp),
-                    fontWeight = FontWeight.Thin,
-                    fontSize = 10.sp,
-                    fontStyle = FontStyle.Italic,
-                    textAlign = TextAlign.Center
+                    text = "坚持记账的第${daysCount}天",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
+
+                Text(
+                    text = "已记录${transactionCount}条账单",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
                 )
             }
         }
@@ -217,3 +123,71 @@ fun MyPage_Card() {
 }
 
 
+@Composable
+fun SettingsCard(content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column {
+            content()
+        }
+    }
+}
+
+@Composable
+fun SettingItem(
+    icon: ImageVector,
+    title: String,
+    trailing: String? = null,
+    trailingColor: Color = Color.Gray,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,  // 去除点击波纹效果
+                onClick = onClick
+            )
+            .padding(
+                vertical = 16.dp,
+                horizontal = 16.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 左侧图标
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF4CAF50),
+            modifier = Modifier.size(24.dp)
+        )
+        // 标题
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .weight(1f)
+        )
+        // 可选的尾部文本
+        if (trailing != null) {
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.bodyMedium,
+                color = trailingColor,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
+        // 右箭头
+        Icon(
+            imageVector = Icons.Outlined.KeyboardArrowRight,
+            contentDescription = "下一步",
+            tint = Color.Gray,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}

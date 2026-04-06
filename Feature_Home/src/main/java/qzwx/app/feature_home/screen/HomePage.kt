@@ -187,9 +187,16 @@ fun HomePage(
                     .toLocalDate()
             }.toSortedMap(compareByDescending { it })
 
+            val today = java.time.LocalDate.now()
+
             billsByDate.forEach { (date, dailyBills) ->
                 item {
-                    val dateStr = "${date.monthValue}月${date.dayOfMonth}日"
+                    val dateStr = when (date) {
+                        today -> "今日"
+                        today.minusDays(1) -> "昨日"
+                        today.plusDays(1) -> "明日"
+                        else -> "${date.monthValue}月${date.dayOfMonth}日"
+                    }
                     val dayOfWeekStr = when (date.dayOfWeek.value) {
                         1 -> "星期一"
                         2 -> "星期二"
