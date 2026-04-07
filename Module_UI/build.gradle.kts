@@ -87,4 +87,7 @@ dependencies {
     api("androidx.paging:paging-compose:3.4.2")
     // 官方Pager
     api("androidx.compose.foundation:foundation:1.10.6")
+    //widget
+    api("androidx.glance:glance-appwidget:1.1.1")
+    api("androidx.glance:glance-material3:1.1.1")
 }
