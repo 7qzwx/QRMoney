@@ -70,8 +70,8 @@ fun MyPage(
                 SettingsCard {
                     SettingItem(
                         icon = Icons.Outlined.CloudSync,
-                        title = "云同步（插入模拟数据）",
-                        trailing = "未开启，数据仅存本地",
+                        title = "云同步",
+                        trailing = "开发ing",
                         trailingColor = Color.Red,
                         onClick = {
 //                            viewModel1.insertMockData()     插入1K条随机数据
@@ -80,7 +80,7 @@ fun MyPage(
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.FileDownload,
-                        title = "数据备份(删除所有数据)",
+                        title = "数据备份",
                         onClick = {
 //                            viewModel1.clearAllData()   //  删除所有数据
                         }
@@ -89,6 +89,8 @@ fun MyPage(
                     SettingItem(
                         icon = Icons.Outlined.FileDownload,
                         title = "导入导出",
+                        trailing = "开发ing",
+
                         onClick = { /* 导入导出点击 */ }
                     )
                 }
@@ -99,6 +101,8 @@ fun MyPage(
                     SettingItem(
                         icon = Icons.Outlined.Wallpaper,
                         title = "主题外观",
+                        trailing = "开发ing",
+
                         onClick = { /* 主题外观点击 */ }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
@@ -121,30 +125,40 @@ fun MyPage(
                     SettingItem(
                         icon = Icons.Outlined.Help,
                         title = "使用手册",
+                        trailing = "开发ing",
+
                         onClick = { /* 使用手册点击 */ }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.Person,
                         title = "邀请好友",
+                        trailing = "开发ing",
+
                         onClick = { /* 邀请好友点击 */ }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.ChatBubbleOutline,
                         title = "建议与反馈",
+                        trailing = "开发ing",
+
                         onClick = { /* 建议与反馈点击 */ }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.Star,
                         title = "给应用评分",
+                        trailing = "开发ing",
+
                         onClick = { /* 给应用评分点击 */ }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.Info,
                         title = "关于我们",
+                        trailing = "开发ing",
+
                         onClick = { /* 关于我们点击 */ }
                     )
                 }

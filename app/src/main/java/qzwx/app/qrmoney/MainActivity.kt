@@ -7,6 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import qzwx.app.feature_asset.nav3.AssetRouteBuilder
 import qzwx.app.feature_calendart.nav3.CalendarRouteBuilder
 import qzwx.app.feature_home.nav3.HomeRouteBuilder
@@ -60,46 +63,67 @@ fun QApp() {
         BottomBarRoute.Asset,
         BottomBarRoute.My
     )
+    val pagerCount = bottomBarRoute.size
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     var selectedRouteIndex by rememberSaveable { mutableIntStateOf(0) }
-    val selectedRoute = bottomBarRoute[selectedRouteIndex]
-    val backStack = rememberNavBackStack(selectedRoute.route)
-    val isBottomBarVisible = bottomBarRoute.any { it.route == backStack.lastOrNull() }  // 是否显示底部导航栏
+    // 为每个主页面维护独立NavBackStack
+    val backStacks = List(pagerCount) { idx ->
+        rememberNavBackStack(bottomBarRoute[idx].route)
+    }
+    val pagerState = rememberPagerState(
+        initialPage = selectedRouteIndex,
+        pageCount = { pagerCount }
+    )
+    val isBottomBarVisible = bottomBarRoute.any { it.route == backStacks[pagerState.currentPage].lastOrNull() }
+
+    // 切换底部导航或滑动时只切换索引，不重置backStack
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) {
+        if (selectedRouteIndex != pagerState.currentPage) {
+            selectedRouteIndex = pagerState.currentPage
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (isBottomBarVisible) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)) {
-                    bottomBarRoute.forEach { route ->
+                    bottomBarRoute.forEachIndexed { idx, route ->
                         NavigationBarItem(
-                            selected = selectedRoute == route,
+                            selected = selectedRouteIndex == idx,
                             icon = { Icon(route.Icon, route.label) },
                             label = { Text(route.label) },
                             onClick = {
-                                selectedRouteIndex = bottomBarRoute.indexOf(route)
-                                backStack.clear()
-                                backStack.add(route.route)
+                                coroutineScope.launch {
+                                    pagerState.scrollToPage(idx)
+                                }
                             }
                         )
                     }
                 }
             }
         }) { innerPadding ->
-        NavDisplay(
-            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-            backStack = backStack,
-            entryDecorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator()
-            ),
-            entryProvider = entryProvider {
-                HomeRouteBuilder(backStack)
-                CalendarRouteBuilder(backStack)
-                AssetRouteBuilder(backStack)
-                MyRouteBuilder(backStack)
-                StatisticRouteBuilder(backStack)
-                UiRouteBuilder(backStack)
-            }
-        )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+        ) { page ->
+            val backStack = backStacks[page]
+            NavDisplay(
+                modifier = Modifier.fillMaxSize(),
+                backStack = backStack,
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator()
+                ),
+                entryProvider = entryProvider {
+                    HomeRouteBuilder(backStack)
+                    CalendarRouteBuilder(backStack)
+                    AssetRouteBuilder(backStack)
+                    MyRouteBuilder(backStack)
+                    StatisticRouteBuilder(backStack)
+                    UiRouteBuilder(backStack)
+                }
+            )
+        }
     }
 }

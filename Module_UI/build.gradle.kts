@@ -85,4 +85,6 @@ dependencies {
     api("androidx.paging:paging-rxjava3:3.4.2")
     api("androidx.paging:paging-guava:3.4.2")
     api("androidx.paging:paging-compose:3.4.2")
+    // 官方Pager
+    api("androidx.compose.foundation:foundation:1.10.6")
 }

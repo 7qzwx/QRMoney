@@ -852,7 +852,10 @@ fun Home_TopBar(
             )
         },
         actions = {
-            IconButton(onClick = onSearchClick, modifier = Modifier.padding(end = 16.dp)) {
+            IconButton(
+                onClick = onSearchClick,
+
+                ) {
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search"
