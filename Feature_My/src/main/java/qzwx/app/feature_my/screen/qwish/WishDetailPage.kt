@@ -1,4 +1,4 @@
-package qzwx.app.feature_my.screen
+package qzwx.app.feature_my.screen.qwish
 
 
 import android.annotation.SuppressLint
@@ -34,8 +34,7 @@ import java.util.Locale
 fun WishDetailPage(
     wishId: Long,
     onBackClick: () -> Unit = {},
-    onEditClick: (wishId: Long) -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onEditClick: (wishId: Long) -> Unit = {}
 ) {
     val activity = LocalContext.current as ComponentActivity
     val viewModel: QWishPage_VM = hiltViewModel(activity)

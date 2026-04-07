@@ -1,7 +1,9 @@
-package qzwx.app.feature_my.screen
+package qzwx.app.feature_my.screen.qwish
 
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,6 +25,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,7 +118,7 @@ fun AddNewWishPage(
 
     if (showExpectedDatePicker) {
         val startMidnightUtc = remember(startDate) {
-            Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                 timeInMillis = startDate
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
@@ -272,10 +275,10 @@ fun AddNewWishPage(
                         label = { Text("开始日期") },
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }.also { interactionSource ->
+                        interactionSource = remember { MutableInteractionSource() }.also { interactionSource ->
                             LaunchedEffect(interactionSource) {
                                 interactionSource.interactions.collect {
-                                    if (it is androidx.compose.foundation.interaction.PressInteraction.Release) {
+                                    if (it is PressInteraction.Release) {
                                         showStartDatePicker = true
                                     }
                                 }
@@ -306,10 +309,10 @@ fun AddNewWishPage(
                                 }
                             }
                         },
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }.also { interactionSource ->
+                        interactionSource = remember { MutableInteractionSource() }.also { interactionSource ->
                             LaunchedEffect(interactionSource) {
                                 interactionSource.interactions.collect {
-                                    if (it is androidx.compose.foundation.interaction.PressInteraction.Release) {
+                                    if (it is PressInteraction.Release) {
                                         showExpectedDatePicker = true
                                     }
                                 }

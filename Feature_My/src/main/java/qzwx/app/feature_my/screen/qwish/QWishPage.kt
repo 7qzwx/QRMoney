@@ -1,25 +1,25 @@
-package qzwx.app.feature_my.screen
+package qzwx.app.feature_my.screen.qwish
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Assistant
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.text.style.TextAlign
-import androidx.activity.ComponentActivity
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import qzwx.app.feature_my.viewmodel.QWishPage_VM
 import java.text.SimpleDateFormat
@@ -116,17 +116,24 @@ fun QWishPage(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = wish.name,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Outlined.Assistant, contentDescription = "图标")
+                                    Text(
+                                        text = wish.name,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                                 val expectedDate = wish.expectedDate
                                 if (expectedDate != null) {
                                     val remainingMillis = expectedDate - System.currentTimeMillis()
-                                    val remainingDays = TimeUnit.MILLISECONDS.toDays(remainingMillis).coerceAtLeast(0)
+                                    val remainingDays =
+                                        TimeUnit.MILLISECONDS.toDays(remainingMillis)
+                                            .coerceAtLeast(0)
                                     Surface(
                                         shape = MaterialTheme.shapes.small,
                                         color = MaterialTheme.colorScheme.errorContainer,
@@ -136,7 +143,10 @@ fun QWishPage(
                                             text = "剩 $remainingDays 天",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(
+                                                horizontal = 8.dp,
+                                                vertical = 4.dp
+                                            )
                                         )
                                     }
                                 }
@@ -145,7 +155,8 @@ fun QWishPage(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             // 突出待攒金额
-                            val remainingAmount = (wish.targetAmount - wish.savedAmount).coerceAtLeast(0.0)
+                            val remainingAmount =
+                                (wish.targetAmount - wish.savedAmount).coerceAtLeast(0.0)
                             Text(
                                 text = "待攒 ¥" + String.format("%.2f", remainingAmount),
                                 style = MaterialTheme.typography.headlineSmall,
@@ -155,7 +166,9 @@ fun QWishPage(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             // 添加进度条增加可视化效果
-                            val progress = if (wish.targetAmount > 0) (wish.savedAmount / wish.targetAmount).toFloat().coerceIn(0f, 1f) else 0f
+                            val progress =
+                                if (wish.targetAmount > 0) (wish.savedAmount / wish.targetAmount).toFloat()
+                                    .coerceIn(0f, 1f) else 0f
                             LinearProgressIndicator(
                                 progress = { progress },
                                 modifier = Modifier
@@ -177,7 +190,11 @@ fun QWishPage(
                             val expectedDateForText = wish.expectedDate
                             Text(
                                 text = "开始：${dateFormat.format(Date(wish.startDate))}" +
-                                       if (expectedDateForText != null) "  |  期望：${dateFormat.format(Date(expectedDateForText))}" else "",
+                                        if (expectedDateForText != null) "  |  期望：${
+                                            dateFormat.format(
+                                                Date(expectedDateForText)
+                                            )
+                                        }" else "",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
