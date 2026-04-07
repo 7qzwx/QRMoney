@@ -18,18 +18,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import qzwx.app.feature_my.component.SettingItem
 import qzwx.app.feature_my.component.SettingsCard
 import qzwx.app.feature_my.component.UserInfoCard
+import qzwx.app.feature_my.nav3.MyRoute
 import qzwx.app.feature_my.viewmodel.MyPage_VM
 import java.util.concurrent.TimeUnit
-
-private const val FIRST_LAUNCH_PREF = "first_launch_pref"
-private const val FIRST_LAUNCH_DATE = "first_launch_date"
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "ContextCastToActivity")
 @Composable
 fun MyPage(
+    backStack: NavBackStack<NavKey>
 ) {
     val activity = LocalContext.current as ComponentActivity
     val viewModel1: DevTestViewModel = hiltViewModel(activity)
@@ -73,13 +74,17 @@ fun MyPage(
                         title = "云同步（插入模拟数据）",
                         trailing = "未开启，数据仅存本地",
                         trailingColor = Color.Red,
-                        onClick = { viewModel1.insertMockData() }
+                        onClick = {
+//                            viewModel1.insertMockData()     插入1K条随机数据
+                        }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
                         icon = Icons.Outlined.FileDownload,
                         title = "数据备份(删除所有数据)",
-                        onClick = { viewModel1.clearAllData() }
+                        onClick = {
+//                            viewModel1.clearAllData()   //  删除所有数据
+                        }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
@@ -96,6 +101,12 @@ fun MyPage(
                         icon = Icons.Outlined.Wallpaper,
                         title = "主题外观",
                         onClick = { /* 主题外观点击 */ }
+                    )
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                    SettingItem(
+                        icon = Icons.Outlined.GifBox,
+                        title = "愿望清单",
+                        onClick = { backStack.add(MyRoute.QWish) }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                     SettingItem(
@@ -158,7 +169,19 @@ fun MyPage(
 
 // 计算自首次启动以来的天数
 private fun calculateDaysSinceFirstLaunch(firstLaunchDate: Long): Int {
-    val currentTime = System.currentTimeMillis()
-    val diffMillis = currentTime - firstLaunchDate
-    return (TimeUnit.MILLISECONDS.toDays(diffMillis) + 1).toInt() // +1 包括首日
+    val firstCalendar = java.util.Calendar.getInstance().apply {
+        timeInMillis = firstLaunchDate
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    val currentCalendar = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    val diffMillis = currentCalendar.timeInMillis - firstCalendar.timeInMillis
+    return (java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diffMillis).coerceAtLeast(0) + 1).toInt()
 }

@@ -96,7 +96,7 @@ fun QApp() {
                 HomeRouteBuilder(backStack)
                 CalendarRouteBuilder(backStack)
                 AssetRouteBuilder(backStack)
-                MyRouteBuilder()
+                MyRouteBuilder(backStack)
                 StatisticRouteBuilder(backStack)
                 UiRouteBuilder(backStack)
             }

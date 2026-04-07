@@ -9,10 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
 import qzwx.app.module_data.QBillDatabase
-import qzwx.app.module_data.dao.QBillDao
-import qzwx.app.module_data.dao.QDebtDao
-import qzwx.app.module_data.dao.QMyDataDao
-import qzwx.app.module_data.dao.QWalletDao
+import qzwx.app.module_data.dao.*
 
 @Module
 @InstallIn(SingletonComponent::class) // 作用域：应用级单例，整个APP都能用
@@ -25,7 +22,6 @@ object QAppModule {
             QBillDatabase::class.java,
             "QBill数据库"    //自定义数据库名称
         )
-            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -47,6 +43,11 @@ object QAppModule {
     @Provides
     fun qDebtDao(qBillDatabase: QBillDatabase): QDebtDao {
         return qBillDatabase.qDebtDao()
+    }
+
+    @Provides
+    fun qWishDao(qBillDatabase: QBillDatabase): QWishDao {
+        return qBillDatabase.qWishDao()
     }
 
 }
