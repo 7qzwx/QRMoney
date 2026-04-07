@@ -25,7 +25,6 @@ import qzwx.app.feature_my.component.SettingsCard
 import qzwx.app.feature_my.component.UserInfoCard
 import qzwx.app.feature_my.nav3.MyRoute
 import qzwx.app.feature_my.viewmodel.MyPage_VM
-import java.util.concurrent.TimeUnit
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "ContextCastToActivity")
 @Composable
@@ -112,7 +111,7 @@ fun MyPage(
                     SettingItem(
                         icon = Icons.Outlined.Widgets,
                         title = "桌面小部件",
-                        onClick = { /* 桌面小部件点击 */ }
+                        onClick = { backStack.add(MyRoute.QWidgets) }
                     )
                 }
 
@@ -183,5 +182,6 @@ private fun calculateDaysSinceFirstLaunch(firstLaunchDate: Long): Int {
         set(java.util.Calendar.MILLISECOND, 0)
     }
     val diffMillis = currentCalendar.timeInMillis - firstCalendar.timeInMillis
-    return (java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diffMillis).coerceAtLeast(0) + 1).toInt()
+    return (java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diffMillis)
+        .coerceAtLeast(0) + 1).toInt()
 }
