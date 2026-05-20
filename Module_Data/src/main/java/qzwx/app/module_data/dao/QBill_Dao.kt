@@ -12,6 +12,9 @@ interface QBillDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBills(bills: List<QBillEntity>)
 
+    @Query("SELECT * FROM QBillEntity WHERE `创建时间` >= :startMillis AND `创建时间` < :endMillis")
+    suspend fun getBillsBetweenOnce(startMillis: Long, endMillis: Long): List<QBillEntity>
+
     @Delete
     suspend fun deleteBill(bill: QBillEntity)
 

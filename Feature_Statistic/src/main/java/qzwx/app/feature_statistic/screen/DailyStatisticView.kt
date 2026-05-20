@@ -98,7 +98,7 @@ fun DailyStatisticView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        androidx.compose.material3.Card(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
