@@ -42,7 +42,17 @@ class QZWXApplication : Application() {
                     // 给数据库一点点写入完成的时间缓冲
                     kotlinx.coroutines.delay(300)
 
+                    // 触发小组件刷新（直接调用管理器）
                     QWidgetManager.updateAll(this@QZWXApplication)
+
+                    // 发送显式广播，供独立注册的 BroadcastReceiver 响应（提高在不同进程/场景下的兼容性）
+                    try {
+                        val intent = android.content.Intent("qzwx.app.qrmoney.ACTION_BILL_CHANGED")
+                        intent.setPackage(this@QZWXApplication.packageName)
+                        this@QZWXApplication.sendBroadcast(intent)
+                    } catch (e: Exception) {
+                        android.util.Log.w("WidgetUpdate", "发送广播失败: ${e.message}")
+                    }
                 }
         }
     }

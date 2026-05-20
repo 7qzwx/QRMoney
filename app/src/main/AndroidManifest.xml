@@ -41,6 +41,15 @@
                 android:resource="@xml/widget_demo" />
         </receiver>
 
+        <!-- 接收数据库变更广播并刷新小组件 -->
+        <receiver
+            android:name="qzwx.app.qrmoney.widgets.BillChangeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="qzwx.app.qrmoney.ACTION_BILL_CHANGED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 

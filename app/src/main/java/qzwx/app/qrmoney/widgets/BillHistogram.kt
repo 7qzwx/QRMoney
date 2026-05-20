@@ -11,12 +11,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.glance.*
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -26,13 +28,16 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
+// ...existing imports...
 import androidx.room.Room
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
+import android.content.Intent
+import qzwx.app.qrmoney.MainActivity
 import qzwx.app.module_data.QBillDatabase
 import qzwx.app.module_data.dao.QBillDao
 import qzwx.app.module_data.entity.BillType
@@ -47,6 +52,7 @@ object QWidgetPrefs {
     val isExpenseKey = booleanPreferencesKey("is_expense")
     val isLast7DaysKey = booleanPreferencesKey("is_last_7_days")
     val isExpandedKey = booleanPreferencesKey("is_expanded")
+    val animStepKey = intPreferencesKey("anim_step")
 }
 
 
@@ -57,26 +63,51 @@ class ToggleWidgetAction : ActionCallback {
         parameters: ActionParameters
     ) {
         val keyName = parameters[ActionParameters.Key<String>("key")]
-
+        val explicitValue = parameters[ActionParameters.Key<String>("value")]
+        // Update the requested preference
         updateAppWidgetState(context, glanceId) { prefs ->
             when (keyName) {
                 "isExpense" -> {
-                    val current = prefs[QWidgetPrefs.isExpenseKey] ?: true
-                    prefs[QWidgetPrefs.isExpenseKey] = !current
+                    if (explicitValue != null) {
+                        prefs[QWidgetPrefs.isExpenseKey] = explicitValue.toBoolean()
+                    } else {
+                        val current = prefs[QWidgetPrefs.isExpenseKey] ?: true
+                        prefs[QWidgetPrefs.isExpenseKey] = !current
+                    }
                 }
 
                 "isLast7Days" -> {
-                    val current = prefs[QWidgetPrefs.isLast7DaysKey] ?: false
-                    prefs[QWidgetPrefs.isLast7DaysKey] = !current
+                    if (explicitValue != null) {
+                        prefs[QWidgetPrefs.isLast7DaysKey] = explicitValue.toBoolean()
+                    } else {
+                        val current = prefs[QWidgetPrefs.isLast7DaysKey] ?: false
+                        prefs[QWidgetPrefs.isLast7DaysKey] = !current
+                    }
                 }
 
                 "isExpanded" -> {
-                    val current = prefs[QWidgetPrefs.isExpandedKey] ?: false
-                    prefs[QWidgetPrefs.isExpandedKey] = !current
+                    if (explicitValue != null) {
+                        prefs[QWidgetPrefs.isExpandedKey] = explicitValue.toBoolean()
+                    } else {
+                        val current = prefs[QWidgetPrefs.isExpandedKey] ?: false
+                        prefs[QWidgetPrefs.isExpandedKey] = !current
+                    }
                 }
             }
+            // reset animation step to 0 to start animation
+            prefs[QWidgetPrefs.animStepKey] = 0
         }
-        QBillHistogram().update(context, glanceId)
+
+        // trigger a short animation by incrementing animStep a few times
+        val ANIM_STEPS = 6
+        val ANIM_DELAY_MS = 60L
+        for (i in 1..ANIM_STEPS) {
+            updateAppWidgetState(context, glanceId) { prefs ->
+                prefs[QWidgetPrefs.animStepKey] = i
+            }
+            QBillHistogram().update(context, glanceId)
+            kotlinx.coroutines.delay(ANIM_DELAY_MS)
+        }
     }
 }
 
@@ -102,6 +133,7 @@ interface QWidgetEntryPoint {
 class QBillHistogram : GlanceAppWidget() {
     // 关键：指定使用 Preferences 管理状态
     override val stateDefinition = PreferencesGlanceStateDefinition
+    // Note: SizeMode.Responsive not used here to keep compatibility; widget supports resizing via provider xml
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appContext = context.applicationContext
@@ -114,6 +146,7 @@ class QBillHistogram : GlanceAppWidget() {
             val isExpense = prefs[QWidgetPrefs.isExpenseKey] ?: true
             val isLast7Days = prefs[QWidgetPrefs.isLast7DaysKey] ?: false
             val isExpanded = prefs[QWidgetPrefs.isExpandedKey] ?: false
+            val animStep = prefs[QWidgetPrefs.animStepKey] ?: 6
 
             // 计算日期
             val localDates = if (isLast7Days) {
@@ -140,7 +173,7 @@ class QBillHistogram : GlanceAppWidget() {
             }
 
             GlanceTheme {
-                QBillHistogramUI(chartData, isExpense, isLast7Days, isExpanded)
+                QBillHistogramUI(chartData, isExpense, isLast7Days, isExpanded, animStep)
             }
         }
     }
@@ -151,13 +184,24 @@ class QReceiver_BillHistogram : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = QBillHistogram()
 }
 
+// 点击打开 APP 的 Action
+class OpenAppAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+}
+
 @SuppressLint("RestrictedApi")
 @Composable
 private fun QBillHistogramUI(
     data: List<ChartData>,
     isExpense: Boolean,
     isLast7Days: Boolean,
-    isExpanded: Boolean
+    isExpanded: Boolean,
+    animStep: Int = 6
 ) {
     val primaryColor = ColorProvider(
         day = MaterialTheme.colorScheme.primary,
@@ -172,9 +216,10 @@ private fun QBillHistogramUI(
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(surfaceColor)
             .cornerRadius(16.dp)
+            .clickable(actionRunCallback<OpenAppAction>()) // 点击打开 APP
     ) {
         // --- Header ---
         Row(
@@ -186,25 +231,43 @@ private fun QBillHistogramUI(
                 modifier = GlanceModifier.defaultWeight(),
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
-                Column(
-                    modifier = GlanceModifier.clickable(
-                        actionRunCallback<ToggleWidgetAction>(
-                            actionParametersOf(
-                                ActionParameters.Key<String>(
-                                    "key"
-                                ) to "isLast7Days"
+                Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                    Column(
+                        modifier = GlanceModifier.clickable(
+                            actionRunCallback<ToggleWidgetAction>(
+                                actionParametersOf(
+                                    ActionParameters.Key<String>("key") to "isLast7Days"
+                                )
                             )
                         )
-                    )
-                ) {
-                    Text(
-                        text = if (isLast7Days) "近七天统计" else "本周统计",
-                        style = TextStyle(
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryColor
+                    ) {
+                        Text(
+                            text = if (isLast7Days) "近七天统计" else "本周统计",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = primaryColor
+                            )
                         )
-                    )
+                    }
+
+                    Spacer(GlanceModifier.width(6.dp))
+
+                    // 展开/收起 按钮
+                    Box(
+                        modifier = GlanceModifier.clickable(
+                            actionRunCallback<ToggleWidgetAction>(
+                                actionParametersOf(
+                                    ActionParameters.Key<String>("key") to "isExpanded"
+                                )
+                            )
+                        ).padding(4.dp)
+                    ) {
+                        Text(
+                            text = if (isExpanded) "收起" else "详情",
+                            style = TextStyle(fontSize = 12.sp, color = primaryColor)
+                        )
+                    }
                 }
 
                 Spacer(GlanceModifier.width(4.dp))
@@ -214,60 +277,108 @@ private fun QBillHistogramUI(
             Row(
                 modifier = GlanceModifier
                     .cornerRadius(8.dp)
-                    .background(ColorProvider(Color.LightGray.copy(alpha = 0.2f)))
-            ) {
-                listOf(true to "支出", false to "收入").forEach { (type, label) ->
-                    val isActive = isExpense == type
-                    Box(
-                        modifier = GlanceModifier
-                            .background(if (isActive) primaryColor else ColorProvider(Color.Transparent))
-                            .cornerRadius(8.dp)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                            .clickable(
-                                actionRunCallback<ToggleWidgetAction>(
-                                    actionParametersOf(
-                                        ActionParameters.Key<String>("key") to "isExpense"
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                color = if (isActive) ColorProvider(Color.White) else primaryColor
-                            )
+                    .background(
+                        ColorProvider(
+                            day = Color.LightGray.copy(alpha = 0.2f),
+                            night = Color.LightGray.copy(alpha = 0.2f)
                         )
-                    }
+                    )
+            ) {
+                // 支出/收入 两个按钮，传入明确 value
+                Box(
+                    modifier = GlanceModifier
+                        .background(
+                            if (isExpense) primaryColor else ColorProvider(day = Color.Transparent, night = Color.Transparent)
+                        )
+                        .cornerRadius(8.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .clickable(
+                            actionRunCallback<ToggleWidgetAction>(
+                                actionParametersOf(
+                                    ActionParameters.Key<String>("key") to "isExpense",
+                                    ActionParameters.Key<String>("value") to "true"
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "支出",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = if (isExpense) ColorProvider(day = Color.White, night = Color.White) else primaryColor
+                        )
+                    )
+                }
+
+                Box(
+                    modifier = GlanceModifier
+                        .background(if (!isExpense) primaryColor else ColorProvider(day = Color.Transparent, night = Color.Transparent))
+                        .cornerRadius(8.dp)
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .clickable(
+                            actionRunCallback<ToggleWidgetAction>(
+                                actionParametersOf(
+                                    ActionParameters.Key<String>("key") to "isExpense",
+                                    ActionParameters.Key<String>("value") to "false"
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "收入",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = if (!isExpense) ColorProvider(day = Color.White, night = Color.White) else primaryColor
+                        )
+                    )
                 }
             }
         }
 
-        // --- 柱状图区域 ---
+        // --- 柱状图区域：样式靠近 DailyStatisticView ---
         val maxValue = data.maxOfOrNull { it.value }?.takeIf { it > 0 } ?: 1.0
         Row(
-            modifier = GlanceModifier.fillMaxWidth().height(120.dp).padding(horizontal = 8.dp),
+            modifier = GlanceModifier.fillMaxWidth().height(210.dp).padding(horizontal = 8.dp),
             verticalAlignment = Alignment.Vertical.Bottom
         ) {
-            data.forEach { item ->
-                val fraction = (item.value / maxValue).toFloat().coerceIn(0.05f, 1f)
+                data.forEach { item ->
+                // 将 animStep 用作动画进度因子（0..ANIM_STEPS）
+                val ANIM_STEPS = 6f
+                val animFactor = (animStep.coerceAtLeast(0).coerceAtMost(ANIM_STEPS.toInt()) / ANIM_STEPS)
+                val fraction = (item.value / maxValue).toFloat().coerceAtLeast(0.01f) * animFactor
+                val isZero = item.value == 0.0
+
                 Column(
                     modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
                     verticalAlignment = Alignment.Vertical.Bottom,
                     horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                 ) {
-                    if (item.value > 0) {
-                        Text(text = "${item.value.toInt()}", style = TextStyle(fontSize = 9.sp))
+                    if (!isZero) {
+                        // 显示数值，整数则显示整数，否则保留一位小数
+                        val valueText = if (item.value % 1.0 == 0.0) item.value.toInt().toString()
+                        else String.format(java.util.Locale.getDefault(), "%.1f", item.value)
+                        Text(
+                            text = valueText,
+                            style = TextStyle(
+                                fontSize = 10.sp,
+                                color = ColorProvider(day = Color.Gray, night = Color.Gray)
+                            )
+                        )
                     }
+
+                    Spacer(GlanceModifier.height(6.dp))
+
                     Box(
                         modifier = GlanceModifier
-                            .width(14.dp)
-                            .height((80 * fraction).dp)
+                            .width(18.dp)
+                            .height((140 * fraction).dp)
+                            .cornerRadius(6.dp)
                             .background(barColor)
-
                     ) {}
-                    Spacer(GlanceModifier.height(4.dp))
+
+                    Spacer(GlanceModifier.height(6.dp))
                     Text(text = item.label, style = TextStyle(fontSize = 10.sp))
                 }
             }
@@ -283,20 +394,26 @@ private fun QBillHistogramUI(
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     Text(
                         "总金额",
-                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color.Gray))
+                        style = TextStyle(
+                            fontSize = 11.sp,
+                            color = ColorProvider(day = Color.Gray, night = Color.Gray)
+                        )
                     )
                     Text(
-                        "¥${String.format("%.2f", total)}",
+                        "¥${String.format(java.util.Locale.getDefault(), "%.2f", total)}",
                         style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     )
                 }
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     Text(
                         "日均",
-                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(Color.Gray))
+                        style = TextStyle(
+                            fontSize = 11.sp,
+                            color = ColorProvider(day = Color.Gray, night = Color.Gray)
+                        )
                     )
                     Text(
-                        "¥${String.format("%.2f", total / 7)}",
+                        "¥${String.format(java.util.Locale.getDefault(), "%.2f", total / 7)}",
                         style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     )
                 }
@@ -347,4 +464,6 @@ fun getBillRepository(context: Context): BillRepository {
     ).build()
     return BillRepositoryImpl(db.qBillDao())
 }
+
+
 
