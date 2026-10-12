@@ -9,7 +9,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
 import qzwx.app.module_data.QBillDatabase
-import qzwx.app.module_data.dao.*
+import qzwx.app.module_data.dao.QBillDao
+import qzwx.app.module_data.dao.QDebtDao
+import qzwx.app.module_data.dao.QMyDataDao
+import qzwx.app.module_data.dao.QWalletDao
+import qzwx.app.module_data.dao.QWishDao
 
 @Module
 @InstallIn(SingletonComponent::class) // 作用域：应用级单例，整个APP都能用

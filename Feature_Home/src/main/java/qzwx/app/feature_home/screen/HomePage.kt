@@ -1,42 +1,44 @@
 package qzwx.app.feature_home.screen
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import qzwx.app.feature_home.autobill.BillTextParser
-import qzwx.app.feature_home.components.AutoBillVoiceBottomSheet
 import qzwx.app.feature_home.components.Home_SnakBar
 import qzwx.app.feature_home.components.Home_TopBar
 import qzwx.app.feature_home.components.Home_TotalCard
@@ -57,10 +59,7 @@ fun HomePage(
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
     var showBottomSheet by remember { mutableStateOf(false) }
-    var showVoiceSheet by remember { mutableStateOf(false) }
-    var showVoiceConfirmDialog by remember { mutableStateOf(false) }
-    var pendingVoiceTranscript by remember { mutableStateOf<String?>(null) }
-    var isParsingVoiceTranscript by remember { mutableStateOf(false) }
+
 
     // Draft state for undo functionality
     var draftBill by remember { mutableStateOf<QBillEntity?>(null) }
@@ -69,19 +68,7 @@ fun HomePage(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val recordAudioPermission = Manifest.permission.RECORD_AUDIO
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            showVoiceSheet = true
-        } else {
-            scope.launch {
-                snackbarHostState.showSnackbar("需要麦克风权限才能使用离线语音记账")
-            }
-        }
-    }
+
 
     var userSelectedDate by remember { mutableStateOf<java.time.LocalDate?>(null) }
     val listState = rememberLazyListState()
@@ -135,116 +122,7 @@ fun HomePage(
         )
     }
 
-    if (showVoiceConfirmDialog && !pendingVoiceTranscript.isNullOrBlank()) {
-        var editableConfirmText by remember(pendingVoiceTranscript) {
-            mutableStateOf(pendingVoiceTranscript.orEmpty())
-        }
 
-        AlertDialog(
-            onDismissRequest = {
-                if (!isParsingVoiceTranscript) {
-                    showVoiceConfirmDialog = false
-                    pendingVoiceTranscript = null
-                }
-            },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.Mic, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("确认识别内容", style = MaterialTheme.typography.titleLarge)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "例子：昨天 9：26 支付宝 花了7块钱 买包子",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        val accentBrush = Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f)
-                            )
-                        )
-                        OutlinedTextField(
-                            value = editableConfirmText,
-                            onValueChange = { editableConfirmText = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 120.dp, max = 260.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(accentBrush)
-                                .padding(8.dp),
-                            placeholder = { Text("可在此修改识别文本") },
-                            singleLine = false,
-                            maxLines = 8
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    enabled = !isParsingVoiceTranscript,
-                    onClick = {
-                        val transcript = editableConfirmText.trim()
-                        if (transcript.isBlank()) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("请输入识别内容")
-                            }
-                            return@Button
-                        }
-                        isParsingVoiceTranscript = true
-                        scope.launch {
-                            runCatching { BillTextParser.parse(transcript) }
-                                .onSuccess { parsed ->
-                                    draftBill = parsed.toEntity()
-                                    showBottomSheet = true
-                                    showVoiceConfirmDialog = false
-                                    pendingVoiceTranscript = null
-                                }
-                                .onFailure { throwable ->
-                                    snackbarHostState.showSnackbar(
-                                        "语音解析失败：${throwable.message ?: "请重试"}"
-                                    )
-                                }
-                            isParsingVoiceTranscript = false
-                        }
-                    }
-                ) {
-                    Text(if (isParsingVoiceTranscript) "解析中..." else "确认")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !isParsingVoiceTranscript,
-                    onClick = {
-                        showVoiceConfirmDialog = false
-                        pendingVoiceTranscript = null
-                    }
-                ) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-
-    if (showVoiceSheet) {
-        AutoBillVoiceBottomSheet(
-            onDismissRequest = {
-                showVoiceSheet = false
-            },
-            onTranscriptReady = { transcript ->
-                showVoiceSheet = false
-                pendingVoiceTranscript = transcript
-                showVoiceConfirmDialog = true
-            }
-        )
-    }
 
     Scaffold(
         modifier = Modifier
@@ -258,49 +136,27 @@ fun HomePage(
             )
         },
         snackbarHost = { Home_SnakBar(snackbarHostState) },  //SnakBar用于新增数据后重新编辑
-        bottomBar = {
-            AnimatedVisibility(
-                visible = fabVisible,
-                enter = fadeIn() + slideInVertically { it / 2 },
-                exit = fadeOut() + slideOutVertically { it / 2 }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FloatingActionButton(onClick = {
-                        if (ContextCompat.checkSelfPermission(
-                                context,
-                                recordAudioPermission
-                            ) == PackageManager.PERMISSION_GRANTED
-                        ) {
-                            showVoiceSheet = true
-                        } else {
-                            permissionLauncher.launch(recordAudioPermission)
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "语音记账"
-                        )
-                    }
+        floatingActionButton = {
 
-                    FloatingActionButton(onClick = {
-                        draftBill = null
-                        showBottomSheet = true
-                    }) {
+                AnimatedVisibility(
+                    visible = fabVisible,
+                    enter = fadeIn() + slideInVertically { it / 2 },
+                    exit = fadeOut() + slideOutVertically { it / 2 }
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            draftBill = null
+                            showBottomSheet = true
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "新增账单"
                         )
                     }
-                }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
             state = listState,

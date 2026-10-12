@@ -1,24 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Quick input widget provider for quick voice note taking -->
     <application>
-        <!-- Activity that displays voice input interface from widget -->
-        <activity
-            android:name="qzwx.app.feature_home.widget.WidgetVoiceInputActivity"
-            android:exported="true" />
 
-        <!-- AppWidgetProvider registration -->
-        <receiver
-            android:name="qzwx.app.feature_home.widget.QuickInputWidgetProvider"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/quick_input_widget_info" />
-        </receiver>
     </application>
 
 </manifest>

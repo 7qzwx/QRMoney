@@ -27,9 +27,12 @@ class QZWXApplication : Application() {
         super.onCreate()
         context = applicationContext
 
+
         // 3. 开始自动监听数据库更新
         observeDatabaseChanges()
     }
+
+
 
     private fun observeDatabaseChanges() {
         applicationScope.launch(Dispatchers.IO) { // 改为 IO 线程监听数据库
