@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- 精确闹钟权限 Android12+ -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- 开机广播权限 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Android13+ 通知权限 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".QZWXApplication"
@@ -25,11 +31,11 @@
             android:theme="@style/Theme.QRMoney">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!-- 小组件接收器 -->
         <receiver
             android:name="qzwx.app.qrmoney.widgets.QReceiver_BillHistogram"
             android:exported="true">
@@ -41,7 +47,6 @@
                 android:resource="@xml/widget_demo" />
         </receiver>
 
-        <!-- 接收数据库变更广播并刷新小组件 -->
         <receiver
             android:name="qzwx.app.qrmoney.widgets.BillChangeReceiver"
             android:exported="true">
@@ -50,7 +55,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- ========== 新增：吃饭提醒闹钟接收器 ========== -->
+        <receiver
+            android:name="qzwx.app.qrmoney.scheduler.MealAlarmReceiver"
+            android:exported="false" />
+
+        <!-- ========== 新增：开机重建闹钟接收器 ========== -->
+        <receiver
+            android:name="qzwx.app.qrmoney.receiver.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
     </application>
-
-
 </manifest>

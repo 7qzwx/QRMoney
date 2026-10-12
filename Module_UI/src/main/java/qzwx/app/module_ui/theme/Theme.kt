@@ -123,16 +123,17 @@ fun QAppTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
+//        darkTheme -> darkScheme   亮色暗色模式自动切换
+//        else -> lightScheme   //亮色暗色模式自动切换
         darkTheme -> darkScheme
-        else -> lightScheme
+        else -> darkScheme
     }
 
     // 设置系统 状态栏颜色跟背景一致
     val systemUiController = rememberSystemUiController()
     val syscolor = colorScheme.background // 【重点修改】直接从计算好的 colorScheme 中直接取背景色，而不是写死
-    val darkiconscolor = if (isSystemInDarkTheme()) {
-        false
-    } else true
+//    val darkiconscolor = if (isSystemInDarkTheme()) { false } else true
+    val darkiconscolor = false
     SideEffect {
         systemUiController.setStatusBarColor(
             color = syscolor, // 状态栏

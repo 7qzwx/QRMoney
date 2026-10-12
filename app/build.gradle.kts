@@ -7,6 +7,13 @@ plugins {
 }
 
 android {
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = false  // 关键：禁用旧版打包
+        }
+    }
+
     namespace = "qzwx.app.qrmoney"
     compileSdk {
         version = release(36) {
@@ -18,8 +25,8 @@ android {
         applicationId = "qzwx.app.qrmoney"
         minSdk = 29
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.0.8"
+        versionCode = 11
+        versionName = "2.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -45,6 +52,9 @@ android {
 
 
 dependencies {
+//
+//    implementation("com.alphacephei:vosk-android:0.3.47")
+//    implementation("net.java.dev.jna:jna:5.13.0@aar")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
