@@ -135,7 +135,7 @@ fun CalendarDayCell(
 
         // 第一行：支出(红) 或 “无”(灰) 或 “-0”(红，当只有收入时) 或 空白占位
         Text(
-            text = if (expense != null) "-${expense}"
+            text = if (expense != null) "-${String.format(Locale.US, "%.2f", expense)}"
             else if (income != null) "-0"
             else if (!hasData) "无"
             else " ",
@@ -147,7 +147,7 @@ fun CalendarDayCell(
 
         // 第二行：收入(绿) 或 空白占位
         Text(
-            text = if (income != null) "+${income}" else " ",
+            text = if (income != null) "+${String.format(Locale.US, "%.2f", income)}" else " ",
             color = if (income != null) Color(0xFF4CAF50) else Color.Transparent,
             style = compactTextStyle,
             maxLines = 1,
@@ -175,3 +175,4 @@ fun DaysOfWeekTitle(daysOfWeek: List<DayOfWeek>) {
         }
     }
 }
+

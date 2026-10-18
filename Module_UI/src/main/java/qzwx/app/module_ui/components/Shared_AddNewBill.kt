@@ -4,19 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -27,43 +15,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Backspace
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,85 +60,144 @@ fun CustomCalculatorKeyboard(
     onBackspace: () -> Unit,
     onActionClick: () -> Unit
 ) {
+
+    @Composable
+    fun StyledCalcButton(
+        text: String,
+        modifier: Modifier = Modifier,
+        containerColor: androidx.compose.ui.graphics.Color,
+        contentColor: androidx.compose.ui.graphics.Color,
+        onClick: () -> Unit
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(56.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = containerColor,
+                contentColor = contentColor
+            ),
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = text,
+                fontSize = if (text.length > 1) 18.sp else 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+    }
+
+    // 数字/运算键专用：display (按钮显示) 和 keyValue (实际传给 onKeyClick) 分离
+    // 这样修改键位时只可能填错 display，不可能填错 keyValue (它和解析器紧绑)
+    @Composable
+    fun CalcKeyButton(
+        display: String,
+        keyValue: String,
+        modifier: Modifier = Modifier,
+        isOperator: Boolean = false,
+        onKeyClick: (String) -> Unit
+    ) {
+        StyledCalcButton(
+            text = display,
+            modifier = modifier,
+            containerColor = if (isOperator) MaterialTheme.colorScheme.secondaryContainer
+                             else MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = if (isOperator) MaterialTheme.colorScheme.onSecondaryContainer
+                            else MaterialTheme.colorScheme.onSurface,
+            onClick = { onKeyClick(keyValue) }
+        )
+    }
+
+    // 动作键专用：AC、⌫、确认/取消/等于/保存 等不带具体 keyValue 的按钮
     @Composable
     fun CalcButton(
         text: String,
         modifier: Modifier = Modifier,
         isOperator: Boolean = false,
+        isAction: Boolean = false,
         onClick: () -> Unit
     ) {
-        Button(
-            onClick = onClick,
-            modifier = modifier.height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isOperator) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isOperator) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        ) {
-            Text(
-                text = text, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-        }
+        StyledCalcButton(
+            text = text,
+            modifier = modifier,
+            containerColor = when {
+                isAction -> MaterialTheme.colorScheme.primary
+                isOperator -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.surfaceContainerHigh
+            },
+            contentColor = when {
+                isAction -> MaterialTheme.colorScheme.onPrimary
+                isOperator -> MaterialTheme.colorScheme.onSecondaryContainer
+                else -> MaterialTheme.colorScheme.onSurface
+            },
+            onClick = onClick
+        )
     }
 
-    Row(
+    val hasOperator = amountValue.drop(1).any { it in listOf('+', '-', '*', '/') }
+    val actionText = when {
+        amountValue.isEmpty() -> "取消"
+        hasOperator -> "等于"
+        wasEvaluated -> "保存"
+        else -> "确认"
+    }
+
+    // 整齐统一的 5 行 × 4 列网格，所有按钮强制等高 (56dp) 等宽
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Left Side (0.7 weight)
-        Column(
-            modifier = Modifier.weight(0.7f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // Row 1: 1  2  3  +
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("1", Modifier.weight(1f)) { onKeyClick("1") }
-                CalcButton("2", Modifier.weight(1f)) { onKeyClick("2") }
-                CalcButton("3", Modifier.weight(1f)) { onKeyClick("3") }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("4", Modifier.weight(1f)) { onKeyClick("4") }
-                CalcButton("5", Modifier.weight(1f)) { onKeyClick("5") }
-                CalcButton("6", Modifier.weight(1f)) { onKeyClick("6") }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("7", Modifier.weight(1f)) { onKeyClick("7") }
-                CalcButton("8", Modifier.weight(1f)) { onKeyClick("8") }
-                CalcButton("9", Modifier.weight(1f)) { onKeyClick("9") }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("AC", Modifier.weight(1f), isOperator = true) { onClear() }
-                CalcButton("0", Modifier.weight(1f)) { onKeyClick("0") }
-                CalcButton(".", Modifier.weight(1f), isOperator = true) { onKeyClick(".") }
-            }
+            CalcKeyButton("1", "1", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("2", "2", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("3", "3", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("+", "+", Modifier.weight(1f), isOperator = true) { onKeyClick(it) }
         }
-
-        // Right Side (0.3 weight)
-        Column(
-            modifier = Modifier.weight(0.3f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // Row 2: 4  5  6  -
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            CalcButton("⌫", Modifier.fillMaxWidth(), isOperator = true) { onBackspace() }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("+", Modifier.weight(1f), isOperator = true) { onKeyClick("+") }
-                CalcButton("-", Modifier.weight(1f), isOperator = true) { onKeyClick("-") }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CalcButton("×", Modifier.weight(1f), isOperator = true) { onKeyClick("*") }
-                CalcButton("÷", Modifier.weight(1f), isOperator = true) { onKeyClick("/") }
-            }
-
-            val hasOperator = amountValue.drop(1).any { it in listOf('+', '-', '*', '/') }
-            val actionText = when {
-                amountValue.isEmpty() -> "取消"
-                hasOperator -> "等于"
-                wasEvaluated -> "保存"
-                else -> "确认"
-            }
-            CalcButton(actionText, Modifier.fillMaxWidth(), isOperator = true) { onActionClick() }
+            CalcKeyButton("4", "4", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("5", "5", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("6", "6", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("-", "-", Modifier.weight(1f), isOperator = true) { onKeyClick(it) }
+        }
+        // Row 3: 7  8  9  ×
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CalcKeyButton("7", "7", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("8", "8", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("9", "9", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton("×", "*", Modifier.weight(1f), isOperator = true) { onKeyClick(it) }
+        }
+        // Row 4: AC  0  .  ÷
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CalcButton("AC", Modifier.weight(1f), isOperator = true) { onClear() }
+            CalcKeyButton("0", "0", Modifier.weight(1f)) { onKeyClick(it) }
+            CalcKeyButton(".", ".", Modifier.weight(1f), isOperator = true) { onKeyClick(it) }
+            CalcKeyButton("÷", "/", Modifier.weight(1f), isOperator = true) { onKeyClick(it) }
+        }
+        // Row 5: 确认/取消/等于/保存 (占 3 格)  ⌫
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CalcButton(actionText, Modifier.weight(3f), isAction = true) { onActionClick() }
+            CalcButton("⌫", Modifier.weight(1f), isOperator = true) { onBackspace() }
         }
     }
 }
@@ -844,8 +857,8 @@ fun Shared_AddNewBill_Content(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // 【颜色代码位置在哪：此处】将整体键盘的背景改为material3的第三色调(tertiaryContainer)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        // 【颜色代码位置在哪：此处】将整体键盘的背景改为与sheet一致的background色
+                        .background(MaterialTheme.colorScheme.background)
                         .padding(bottom = 16.dp, top = 8.dp)
                 ) {
                     CustomCalculatorKeyboard(
