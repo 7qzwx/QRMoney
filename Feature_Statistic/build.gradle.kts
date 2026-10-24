@@ -11,9 +11,7 @@ plugins {
 android {
     namespace = "qzwx.app.feature_statistic"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -68,8 +66,8 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
     annotationProcessor("androidx.room:room-compiler:2.8.4")
     //hilt
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     //chart
     implementation("androidx.paging:paging-runtime:3.4.2")
     testImplementation("androidx.paging:paging-common:3.4.2")

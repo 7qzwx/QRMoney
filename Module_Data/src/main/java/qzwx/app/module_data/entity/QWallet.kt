@@ -9,6 +9,7 @@ import androidx.room.PrimaryKey
     tableName = "wallet_table",
     indices = [Index(value = ["类型"], unique = true)]
 )
+@kotlinx.serialization.Serializable
 data class QWalletEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 

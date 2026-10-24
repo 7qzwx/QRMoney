@@ -21,6 +21,16 @@ interface QBillDao {
     @Query("DELETE FROM QBillEntity")
     suspend fun deleteAllBills()
 
+    /**
+     * 清空现有全部账单后写入备份数据（整体替换，事务保证原子性）。
+     * 供“清空后导入”使用。
+     */
+    @Transaction
+    suspend fun replaceAllBills(bills: List<QBillEntity>) {
+        deleteAllBills()
+        insertBills(bills)
+    }
+
     @Update
     suspend fun updateBill(bill: QBillEntity)
 

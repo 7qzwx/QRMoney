@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "debt_table")
+@kotlinx.serialization.Serializable
 data class QDebtEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 
@@ -21,6 +22,7 @@ data class QDebtEntity(
     @ColumnInfo(name = "最后期限") val deadline: Long? = null
 )
 
+@kotlinx.serialization.Serializable
 enum class DebtType(val displayName: String) {
     BORROW("借入"),
     LEND("借出")

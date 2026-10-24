@@ -9,9 +9,7 @@ plugins {
 android {
     namespace = "qzwx.app.module_ui"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -74,8 +72,8 @@ dependencies {
     api(libs.androidx.material3.adaptive.navigation3)
     api(libs.kotlinx.serialization.core)
     //hilt
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     //chart
     api("io.github.ehsannarmani:compose-charts:0.2.5")
     api("io.github.thechance101:chart:1.1.0")

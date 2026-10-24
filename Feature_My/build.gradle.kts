@@ -11,9 +11,7 @@ plugins {
 android {
     namespace = "qzwx.app.feature_my"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -68,13 +66,19 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
     annotationProcessor("androidx.room:room-compiler:2.8.4")
     //hilt
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     //时间日期选择器
     implementation("com.maxkeppeler.sheets-compose-dialogs:core:1.3.0")
     implementation("com.maxkeppeler.sheets-compose-dialogs:calendar:1.3.0")
     implementation("com.maxkeppeler.sheets-compose-dialogs:clock:1.3.0")
     //额外图标
     api("androidx.compose.material:material-icons-extended:1.7.8")
+    //数据备份导出：XLSX (Kexcel)
+    implementation("com.gyanoba.kexcel:kexcel:0.1.2")
+    //数据备份导出：PDF (compose-pdf)
+    implementation("io.github.rikoappdev:compose-pdf:0.9.0")
+    //JSON 序列化（备份 JSON 使用）
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
 }

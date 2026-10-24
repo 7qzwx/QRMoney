@@ -16,17 +16,15 @@ android {
 
     namespace = "qzwx.app.qrmoney"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "qzwx.app.qrmoney"
         minSdk = 29
-        targetSdk = 36
-        versionCode = 12
-        versionName = "2.2.1"
+        targetSdk = 37
+        versionCode = 13
+        versionName = "2.2.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -90,8 +88,8 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
     annotationProcessor("androidx.room:room-compiler:2.8.4")
     //hilt
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60.1")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     //widget
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")

@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "wish_table")
+@kotlinx.serialization.Serializable
 data class QWishEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
 

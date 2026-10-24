@@ -74,7 +74,7 @@ fun MyPage(
                         trailing = "开发ing",
                         trailingColor = Color.Red,
                         onClick = {
-//                            viewModel1.insertMockData()     插入1K条随机数据
+//                          云同步操作
                         }
                     )
                     HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
@@ -82,16 +82,8 @@ fun MyPage(
                         icon = Icons.Outlined.FileDownload,
                         title = "数据备份",
                         onClick = {
-//                            viewModel1.clearAllData()   //  删除所有数据
+                            backStack.add(MyRoute.DataBackUp)
                         }
-                    )
-                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-                    SettingItem(
-                        icon = Icons.Outlined.FileDownload,
-                        title = "导入导出",
-                        trailing = "开发ing",
-
-                        onClick = { /* 导入导出点击 */ }
                     )
                 }
 

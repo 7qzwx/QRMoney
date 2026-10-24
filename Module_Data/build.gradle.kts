@@ -8,9 +8,7 @@ plugins {
 android {
     namespace = "qzwx.app.module_data"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -54,9 +52,9 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
     annotationProcessor("androidx.room:room-compiler:2.8.4")
     //hilt
-    implementation("com.google.dagger:hilt-android:2.59.2")
+    implementation("com.google.dagger:hilt-android:2.60.1")
     api("androidx.hilt:hilt-navigation-compose:1.3.0")
-    ksp("com.google.dagger:hilt-compiler:2.59.2")
+    ksp("com.google.dagger:hilt-compiler:2.60.1")
     implementation(libs.kotlinx.serialization.core)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }

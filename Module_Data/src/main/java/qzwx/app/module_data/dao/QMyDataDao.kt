@@ -15,6 +15,9 @@ interface QMyDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMyDate(myDate: QMyDateEntity)
 
+    @Query("UPDATE QMyDateEntity SET firstLaunchDate = :date, transactionCount = :count WHERE id = (SELECT id FROM QMyDateEntity LIMIT 1)")
+    suspend fun updateMyDate(date: Long, count: Int)
+
     @Query("UPDATE QMyDateEntity SET transactionCount = :count WHERE id = (SELECT id FROM QMyDateEntity LIMIT 1)")
     suspend fun updateTransactionCount(count: Int)
 }

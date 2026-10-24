@@ -7,9 +7,14 @@ sealed class MyRoute : NavKey, java.io.Serializable {
     //---我的页面路由---
     @Serializable
     data object My : MyRoute()
-//---愿望单页面路由---
+
+    @Serializable
+    data object DataBackUp : MyRoute()
+
+    //---愿望单页面路由---
     @Serializable
     data object QWish : MyRoute()
+
     @Serializable
     data object AddNewWish : MyRoute()
 
@@ -18,7 +23,8 @@ sealed class MyRoute : NavKey, java.io.Serializable {
 
     @Serializable
     data class EditWish(val wishId: Long) : MyRoute()
-//---小组件页面路由---
+
+    //---小组件页面路由---
     @Serializable
     data object QWidgets : MyRoute()
 }
